@@ -44,7 +44,7 @@ const fetchOptions = async () => {
       axios.get('https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist', { headers }),
       axios.get('https://mountain-chain.onrender.com/mountainchain/api/getusers', { headers })
     ]);
-
+console.log('Sources:', sourcesRes.data);
     // Filter only Sales Person role users
     const salesPersons = teamRes.data.data ? 
       teamRes.data.data.filter(user => user.role === 'Sales Person') : [];
@@ -114,7 +114,7 @@ const fetchOptions = async () => {
       };
 
       const response = await axios.post(
-        'https://mountain-chain.onrender.com/mountainchain/api/destination',
+        'https://mountain-chain.onrender.com/mountainchain/api/destination/addnewquery',
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -169,16 +169,15 @@ const fetchOptions = async () => {
     required
   >
     <option value="">Select Query Source</option>
-    <option value="direct">Direct</option>
-    <option value="reference">Reference</option>
-    <option value="test">Test</option>
     {options.querySources.map(source => (
       <option key={source._id} value={source._id}>
-        {source.name}
+        {source.type}
       </option>
     ))}
   </select>
 </div>
+
+
           </div>
           
           {/* Reference ID */}
@@ -290,9 +289,16 @@ const fetchOptions = async () => {
                 className="w-full p-3 text-sm border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 required
               />
-              <span className="text-sm font-medium text-blue-700 whitespace-nowrap bg-blue-50 px-3 py-2 rounded-lg">
-                {formData.numberOfNights} Night{formData.numberOfNights !== 1 ? 's' : ''}, {formData.numberOfNights + 1} Day{formData.numberOfNights + 1 !== 1 ? 's' : ''}
-              </span>
+             {(() => {
+  const nights = parseInt(formData.numberOfNights) || 1;
+  const days = nights + 1;
+  return (
+    <span className="text-sm font-medium text-blue-700 whitespace-nowrap bg-blue-50 px-3 py-2 rounded-lg">
+      {nights} Night{nights > 1 ? 's' : ''}, {days} Day{days > 1 ? 's' : ''}
+    </span>
+  );
+})()}
+
             </div>
           </div>
         </div>
