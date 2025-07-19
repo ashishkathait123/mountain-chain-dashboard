@@ -6,6 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { FiPlus, FiTrash2, FiStar, FiMapPin, FiClock, FiUsers, FiCreditCard, FiImage } from 'react-icons/fi';
 import Select from 'react-select';
 import MealPlansSection from "./Meal";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const EditHotel = () => {
   const { id } = useParams();
@@ -83,8 +85,9 @@ const EditHotel = () => {
             }
           }
         );
+console.log("Hotel fetch response", response.data);
 
-        const hotel = response.data.hotel;
+        const hotel = response.data.data;
         setFormData({
           name: hotel.name,
           groupName: hotel.groupName,
@@ -110,6 +113,7 @@ const EditHotel = () => {
         // Set selected meals for the meal plans component
         setSelectedMeals(hotel.meals.map(meal => ({ value: meal, label: meal })));
       } catch (error) {
+        console.log('Error fetching hotel:', error);
         console.error('Error fetching hotel:', error);
         toast.error(error.response?.data?.message || 'Failed to load hotel details');
         navigate('/hotels');
@@ -210,7 +214,9 @@ const EditHotel = () => {
   }
 
   return (
+    
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-light text-gray-900">

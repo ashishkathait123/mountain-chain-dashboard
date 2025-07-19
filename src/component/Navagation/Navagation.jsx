@@ -63,7 +63,17 @@ const Navigation = ({ onLogout }) => {
         { name: 'Hotels', path: '/hotels' },
         { name: 'Hotel Price', path: '/hotel-price' },
       ],
-    }
+    },
+    {
+      name: 'Transport Service',
+      path: '/transport-Service',
+      icon: FiUser,
+      roles: ['Admin', 'Sales Head', 'Sales Person', 'Operation Head', 'Reservation', 'Operation', 'Accountant', 'Data Operator', 'Reservation Head'],
+      dropdown: [
+        { name: 'Transport Service', path: '/transport-Service' },
+        { name: 'Transport Service Price', path: '/transport-Service-price' },
+      ],
+    },
   ];
 
   const toggleDropdown = (index) => {

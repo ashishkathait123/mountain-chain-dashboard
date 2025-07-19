@@ -105,7 +105,7 @@ const ViewHotel = () => {
         </div>
         <div>
           <strong>Trip Destinations:</strong>{' '}
-          <span className="ml-1">{hotel.tripDestinations?.join(', ') || hotel.state}</span>
+          <span className="ml-1">{hotel.tripDestinations.name?.join(', ') || hotel.state}</span>
         </div>
         <div className="text-xs text-gray-500 pt-2">
           Created on {formattedCreatedAt} by Ravikant

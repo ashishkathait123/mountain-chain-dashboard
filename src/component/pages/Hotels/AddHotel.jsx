@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,6 +16,9 @@ const AddHotel = () => {
     city: "",
     county: "",
     zipcode: "",
+    streetAddress: "",
+    locality: "",
+    landmark: "",
     phoneNumbers: [],
     emails: [],
     meals: [],
@@ -38,6 +41,9 @@ const AddHotel = () => {
 
   const [loading, setLoading] = useState(false);
   const [selectedMeals, setSelectedMeals] = useState([]);
+  const [destinations, setDestinations] = useState([]);
+  const [selectedDestinations, setSelectedDestinations] = useState([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(true);
 
   const ROOM_TYPES_ENUM = [
     "AC Deluxe Tent", "camp", "Club Class", "Club Deluxe", "Club Executive",
@@ -63,9 +69,59 @@ const AddHotel = () => {
     "50% on Booking, 50% 30 days before Checkin"
   ];
 
+ 
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          throw new Error('Authentication token not found');
+        }
+
+        setDestinationsLoading(true);
+        
+        const response = await axios.get(
+          'https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist',
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        console.log("Destinations API Response:", response.data); // Log the response
+if (response.data && Array.isArray(response.data.data)) {
+  const formattedDestinations = response.data.data.map(dest => ({
+    value: dest._id,
+    label: dest.name
+  }));
+  setDestinations(formattedDestinations);
+  toast.success("Destinations loaded successfully");
+} else {
+  toast.error("Failed to load destinations");
+}
+
+      } catch (error) {
+        console.error('Error fetching destinations:', error);
+        toast.error(`Failed to load destinations: ${error.message}`);
+      } finally {
+        setDestinationsLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDestinationChange = (selectedOptions) => {
+    setSelectedDestinations(selectedOptions);
+    const destinationIds = selectedOptions.map(option => option.value);
+    setFormData(prev => ({ ...prev, tripDestinations: destinationIds }));
   };
 
   const handleMealChange = (selectedOptions) => {
@@ -110,67 +166,43 @@ const AddHotel = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
 
-    try {
-      const token = sessionStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
-
-      const response = await axios.post(
-        'https://mountain-chain.onrender.com/mountainchain/api/hotel/addhotel',
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-  console.log("Success Response:", response);
-
-      toast.success('Hotel added successfully!');
-      setFormData({
-        name: "",
-        groupName: "",
-        stars: 4,
-        location: "",
-        state: "",
-        city: "",
-        county: "",
-        zipcode: "",
-        phoneNumbers: [],
-        emails: [],
-        meals: [],
-        rooms: [{
-          roomTypes: [],
-          allowedExtraBeds: 1,
-          AWEB: 2000,
-          CWEB: 1500,
-          CNB: 1000,
-          numberOfRooms: 10
-        }],
-        checkinTime: "12:00 PM",
-        checkoutTime: "10:00 AM",
-        childrenAgeRangeMin: 5,
-        childrenAgeRangeMax: 12,
-        tripDestinations: [],
-        paymentPreference: "",
-        hotelImagesLink: ""
-      });
-      setSelectedMeals([]);
-console.log("Submitting hotel data:",formData);
-
-    }
-     catch (error) {
-      console.error('Error adding hotel:', error);
-      toast.error(error.response?.data?.message || 'Failed to add hotel');
-    } finally {
-      setLoading(false);
-    }
+  const cleanedData = {
+    ...formData,
+    // ensure arrays have defaults
+    emails: formData.emails.length ? formData.emails : ["no-email@example.com"],
+    phoneNumbers: formData.phoneNumbers.length ? formData.phoneNumbers : ["0000000000"],
+    meals: formData.meals.length ? formData.meals : ["EP"], // EP = European Plan (no meals)
+    paymentPreference: formData.paymentPreference || "100% on Booking",
+    hotelImagesLink: formData.hotelImagesLink || "https://via.placeholder.com/400x300"
   };
+
+  try {
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+      },
+    };
+
+    const response = await axios.post(
+      "https://mountain-chain.onrender.com/mountainchain/api/hotel/addhotel",
+      cleanedData,
+      config
+    );
+
+    if (response.data.success) {
+      toast.success("Hotel added successfully!");
+    } else {
+      toast.error("Failed to add hotel.");
+    }
+  } catch (error) {
+    console.error("Error adding hotel:", error);
+    toast.error("Server error while adding hotel.");
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -225,6 +257,29 @@ console.log("Submitting hotel data:",formData);
                     <option key={star} value={star}>{star} Star{star > 1 ? 's' : ''}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trip Destinations</label>
+                {destinationsLoading ? (
+                  <div className="text-sm text-gray-500">Loading destinations...</div>
+                ) : (
+                  <Select
+                    isMulti
+                    options={destinations}
+                    value={selectedDestinations}
+                    onChange={handleDestinationChange}
+                    className="basic-multi-select"
+                    classNamePrefix="select"
+                    placeholder="Select destinations..."
+                    isDisabled={destinationsLoading}
+                    noOptionsMessage={() => "No destinations available"}
+                  />
+                )}
+                {selectedDestinations.length > 0 && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    Selected: {selectedDestinations.map(d => d.label).join(', ')}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -284,6 +339,36 @@ console.log("Submitting hotel data:",formData);
                   type="text"
                   name="zipcode"
                   value={formData.zipcode}
+                  onChange={handleChange}
+                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                <input
+                  type="text"
+                  name="streetAddress"
+                  value={formData.streetAddress}
+                  onChange={handleChange}
+                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Locality</label>
+                <input
+                  type="text"
+                  name="locality"
+                  value={formData.locality}
+                  onChange={handleChange}
+                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Landmark</label>
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark}
                   onChange={handleChange}
                   className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
                 />

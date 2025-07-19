@@ -42,6 +42,9 @@ import Hotel from "../component/pages/Hotels/Hotel";
 import AddHotel from "../component/pages/Hotels/AddHotel";
 import ViewHotel from "../component/pages/Hotels/ViewHotel";
 import EditHotel from "../component/pages/Hotels/EditHotel";
+import TransportServices from "../component/pages/transport/TransportServices";
+import AddTransportService from "../component/pages/transport/AddTransportService";
+import CsvUploader from "../component/pages/Hotels/HotelPrice";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -155,10 +158,81 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        
+      </Route>
+      <Route
+        path="/hotel-price"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <CsvUploader />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
       </Route>
 
 
+
+      <Route
+        path="transport-Service"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <TransportServices />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+      
+    <Route
+        path="/addservice"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <AddTransportService />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+        
+      </Route>
       
       <Route
         path="/sales-person/dashboard"
