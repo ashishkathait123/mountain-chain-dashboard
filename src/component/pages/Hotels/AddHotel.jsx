@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from "react";
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FiPlus, FiTrash2, FiStar, FiMapPin, FiClock, FiUsers, FiCreditCard, FiImage } from 'react-icons/fi';
-import Select from 'react-select';
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  FiPlus,
+  FiTrash2,
+  FiStar,
+  FiMapPin,
+  FiClock,
+  FiUsers,
+  FiCreditCard,
+  FiImage,
+  FiUpload,
+  FiX
+} from "react-icons/fi";
+import Select from "react-select";
 import MealPlansSection from "./Meal";
+import { ToastContainer } from "react-toastify";
 
 const AddHotel = () => {
   const [formData, setFormData] = useState({
@@ -22,21 +35,23 @@ const AddHotel = () => {
     phoneNumbers: [],
     emails: [],
     meals: [],
-    rooms: [{
-      roomTypes: [],
-      allowedExtraBeds: 1,
-      AWEB: 2000,
-      CWEB: 1500,
-      CNB: 1000,
-      numberOfRooms: 10
-    }],
+    rooms: [
+      {
+        roomTypes: [],
+        allowedExtraBeds: 1,
+        AWEB: 2000,
+        CWEB: 1500,
+        CNB: 1000,
+        numberOfRooms: 10,
+      },
+    ],
     checkinTime: "12:00 PM",
     checkoutTime: "10:00 AM",
     childrenAgeRangeMin: 5,
     childrenAgeRangeMax: 12,
     tripDestinations: [],
     paymentPreference: "",
-    hotelImagesLink: ""
+    hotelImagesLink: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -44,16 +59,40 @@ const AddHotel = () => {
   const [destinations, setDestinations] = useState([]);
   const [selectedDestinations, setSelectedDestinations] = useState([]);
   const [destinationsLoading, setDestinationsLoading] = useState(true);
+  const [csvFile, setCsvFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const navigate = useNavigate();
 
   const ROOM_TYPES_ENUM = [
-    "AC Deluxe Tent", "camp", "Club Class", "Club Deluxe", "Club Executive",
-    "Club House (4 Person)", "Club Room", "Cottage", "Cottage Room",
-    "Courtyard Executive Room", "Courtyard Family Suite", "Courtyard Premium Suite",
-    "Deluxe", "Deluxe (Non Balcony)", "Deluxe (NON VIEW)", "Deluxe double room",
-    "Deluxe Non View", "Deluxe Room", "Deluxe Room (Balcony room)",
-    "Deluxe Room (Non Valley Facing)", "Deluxe Room (Non View)", "Deluxe Room AC",
-    "Deluxe Room Non AC", "Deluxe Room(Mountain View)", "Deluxe Rooms",
-    "Deluxe Tent", "Deluxe With Balcony", "Deluxr Room", "Double Deluxe Room"
+    "AC Deluxe Tent",
+    "camp",
+    "Club Class",
+    "Club Deluxe",
+    "Club Executive",
+    "Club House (4 Person)",
+    "Club Room",
+    "Cottage",
+    "Cottage Room",
+    "Courtyard Executive Room",
+    "Courtyard Family Suite",
+    "Courtyard Premium Suite",
+    "Deluxe",
+    "Deluxe (Non Balcony)",
+    "Deluxe (NON VIEW)",
+    "Deluxe double room",
+    "Deluxe Non View",
+    "Deluxe Room",
+    "Deluxe Room (Balcony room)",
+    "Deluxe Room (Non Valley Facing)",
+    "Deluxe Room (Non View)",
+    "Deluxe Room AC",
+    "Deluxe Room Non AC",
+    "Deluxe Room(Mountain View)",
+    "Deluxe Rooms",
+    "Deluxe Tent",
+    "Deluxe With Balcony",
+    "Deluxr Room",
+    "Double Deluxe Room",
   ];
 
   const PAYMENT_ENUM = [
@@ -66,44 +105,40 @@ const AddHotel = () => {
     "25% on Booking, 75% 2 days before Checkin",
     "40% on Booking, 60% 7 days before Checkin",
     "50% on Booking, 50% 15 days before Checkin",
-    "50% on Booking, 50% 30 days before Checkin"
+    "50% on Booking, 50% 30 days before Checkin",
   ];
 
- 
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const token = sessionStorage.getItem('token');
+        const token = sessionStorage.getItem("token");
         if (!token) {
-          throw new Error('Authentication token not found');
+          throw new Error("Authentication token not found");
         }
 
         setDestinationsLoading(true);
-        
+
         const response = await axios.get(
-          'https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist',
+          "https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist",
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
         );
 
-        console.log("Destinations API Response:", response.data); // Log the response
-if (response.data && Array.isArray(response.data.data)) {
-  const formattedDestinations = response.data.data.map(dest => ({
-    value: dest._id,
-    label: dest.name
-  }));
-  setDestinations(formattedDestinations);
-  toast.success("Destinations loaded successfully");
-} else {
-  toast.error("Failed to load destinations");
-}
-
+        if (response.data && Array.isArray(response.data.data)) {
+          const formattedDestinations = response.data.data.map((dest) => ({
+            value: dest._id,
+            label: dest.name,
+          }));
+          setDestinations(formattedDestinations);
+        } else {
+          toast.error("Failed to load destinations");
+        }
       } catch (error) {
-        console.error('Error fetching destinations:', error);
+        console.error("Error fetching destinations:", error);
         toast.error(`Failed to load destinations: ${error.message}`);
       } finally {
         setDestinationsLoading(false);
@@ -115,35 +150,35 @@ if (response.data && Array.isArray(response.data.data)) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleDestinationChange = (selectedOptions) => {
     setSelectedDestinations(selectedOptions);
-    const destinationIds = selectedOptions.map(option => option.value);
-    setFormData(prev => ({ ...prev, tripDestinations: destinationIds }));
+    const destinationIds = selectedOptions.map((option) => option.value);
+    setFormData((prev) => ({ ...prev, tripDestinations: destinationIds }));
   };
 
   const handleMealChange = (selectedOptions) => {
-    const meals = selectedOptions.map(option => option.value);
-    setFormData(prev => ({ ...prev, meals }));
+    const meals = selectedOptions.map((option) => option.value);
+    setFormData((prev) => ({ ...prev, meals }));
     setSelectedMeals(selectedOptions);
   };
 
   const handleRoomTypeChange = (index, field, value) => {
     const updatedRooms = [...formData.rooms];
-    
-    if (field === 'roomTypes') {
+
+    if (field === "roomTypes") {
       updatedRooms[index][field] = Array.isArray(value) ? value : [value];
     } else {
       updatedRooms[index][field] = value;
     }
-    
-    setFormData(prev => ({ ...prev, rooms: updatedRooms }));
+
+    setFormData((prev) => ({ ...prev, rooms: updatedRooms }));
   };
 
   const addRoom = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       rooms: [
         ...prev.rooms,
@@ -153,479 +188,888 @@ if (response.data && Array.isArray(response.data.data)) {
           AWEB: 2000,
           CWEB: 1500,
           CNB: 1000,
-          numberOfRooms: 10
-        }
-      ]
+          numberOfRooms: 10,
+        },
+      ],
     }));
   };
 
   const removeRoom = (index) => {
     const updatedRooms = [...formData.rooms];
     updatedRooms.splice(index, 1);
-    setFormData(prev => ({ ...prev, rooms: updatedRooms }));
+    setFormData((prev) => ({ ...prev, rooms: updatedRooms }));
+  };
+
+  const handleCSVUpload = async () => {
+    if (!csvFile) {
+      toast.error("Please select a CSV file to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", csvFile);
+
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        "http://localhost:5500/mountainchain/api/hotel/upload-hotels-csv",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Hotels uploaded successfully from CSV!");
+        setCsvFile(null);
+        setFileName("");
+        navigate('/hotels');
+      } else {
+        toast.error(response.data.message || "CSV upload failed.");
+      }
+    } catch (error) {
+      console.error("CSV Upload Error:", error);
+      toast.error("Error uploading CSV file.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCsvFile(file);
+      setFileName(file.name);
+    }
+  };
+
+  const removeFile = () => {
+    setCsvFile(null);
+    setFileName("");
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading(true);
 
-  const cleanedData = {
-    ...formData,
-    // ensure arrays have defaults
-    emails: formData.emails.length ? formData.emails : ["no-email@example.com"],
-    phoneNumbers: formData.phoneNumbers.length ? formData.phoneNumbers : ["0000000000"],
-    meals: formData.meals.length ? formData.meals : ["EP"], // EP = European Plan (no meals)
-    paymentPreference: formData.paymentPreference || "100% on Booking",
-    hotelImagesLink: formData.hotelImagesLink || "https://via.placeholder.com/400x300"
-  };
-
-  try {
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-      },
+    const cleanedData = {
+      ...formData,
+      emails: formData.emails.length
+        ? formData.emails
+        : ["no-email@example.com"],
+      phoneNumbers: formData.phoneNumbers.length
+        ? formData.phoneNumbers
+        : ["0000000000"],
+      meals: formData.meals.length ? formData.meals : ["EP"],
+      paymentPreference: formData.paymentPreference || "100% on Booking",
+      hotelImagesLink:
+        formData.hotelImagesLink || "https://via.placeholder.com/400x300",
     };
 
-    const response = await axios.post(
-      "https://mountain-chain.onrender.com/mountainchain/api/hotel/addhotel",
-      cleanedData,
-      config
-    );
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      };
 
-    if (response.data.success) {
-      toast.success("Hotel added successfully!");
-    } else {
-      toast.error("Failed to add hotel.");
+      const response = await axios.post(
+        "https://mountain-chain.onrender.com/mountainchain/api/hotel/addhotel",
+        cleanedData,
+        config
+      );
+
+      if (response.data.success) {
+        toast.success("Hotel added successfully!");
+        setFormData({
+          ...formData,
+          name: "",
+          groupName: "",
+          stars: 4,
+          location: "",
+          state: "",
+          city: "",
+          county: "",
+          zipcode: "",
+          streetAddress: "",
+          locality: "",
+          landmark: "",
+          phoneNumbers: [],
+          emails: [],
+          meals: [],
+          rooms: [
+            {
+              roomTypes: [],
+              allowedExtraBeds: 1,
+              AWEB: 2000,
+              CWEB: 1500,
+              CNB: 1000,
+              numberOfRooms: 10,
+            },
+          ],
+          checkinTime: "12:00 PM",
+          checkoutTime: "10:00 AM",
+          childrenAgeRangeMin: 5,
+          childrenAgeRangeMax: 12,
+          tripDestinations: [],
+          paymentPreference: "",
+          hotelImagesLink: "",
+        });
+        navigate('/hotels');
+      } else {
+        toast.error("Failed to add hotel.");
+      }
+    } catch (error) {
+      console.error("Error adding hotel:", error);
+      toast.error("Server error while adding hotel.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error adding hotel:", error);
-    toast.error("Server error while adding hotel.");
-  }
-};
-
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-light text-gray-900">
-            Add New Hotel
-          </h1>
-          <p className="mt-2 text-gray-500">
-            Complete the form to register your property
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden p-6 mb-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-light text-gray-900">Add New Hotel</h1>
+            <p className="mt-2 text-gray-500">
+              Complete the form to register your property
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Information */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2 flex items-center">
-              <FiStar className="mr-2 text-gray-500" /> Basic Information
+          {/* Bulk CSV Upload */}
+          <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <FiUpload className="mr-2" /> Bulk Upload via CSV
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name*</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
-                <input
-                  type="text"
-                  name="groupName"
-                  value={formData.groupName}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Star Rating*</label>
-                <select
-                  name="stars"
-                  value={formData.stars}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                >
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <option key={star} value={star}>{star} Star{star > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trip Destinations</label>
-                {destinationsLoading ? (
-                  <div className="text-sm text-gray-500">Loading destinations...</div>
-                ) : (
-                  <Select
-                    isMulti
-                    options={destinations}
-                    value={selectedDestinations}
-                    onChange={handleDestinationChange}
-                    className="basic-multi-select"
-                    classNamePrefix="select"
-                    placeholder="Select destinations..."
-                    isDisabled={destinationsLoading}
-                    noOptionsMessage={() => "No destinations available"}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="relative w-full">
+                <label className="block">
+                  <span className="sr-only">Choose CSV file</span>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
                   />
-                )}
-                {selectedDestinations.length > 0 && (
-                  <div className="mt-1 text-xs text-gray-500">
-                    Selected: {selectedDestinations.map(d => d.label).join(', ')}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Location Details */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2 flex items-center">
-              <FiMapPin className="mr-2 text-gray-500" /> Location Details
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location*</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City*</label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State*</label>
-                <input
-                  type="text"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">County</label>
-                <input
-                  type="text"
-                  name="county"
-                  value={formData.county}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zipcode</label>
-                <input
-                  type="text"
-                  name="zipcode"
-                  value={formData.zipcode}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                <input
-                  type="text"
-                  name="streetAddress"
-                  value={formData.streetAddress}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Locality</label>
-                <input
-                  type="text"
-                  name="locality"
-                  value={formData.locality}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Landmark</label>
-                <input
-                  type="text"
-                  name="landmark"
-                  value={formData.landmark}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Meal Plans */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2">
-              Meal Plans
-            </h2>
-            <MealPlansSection 
-              selectedMeals={selectedMeals}
-              onMealChange={handleMealChange}
-            />
-          </div>
-
-          {/* Room Types */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2">
-              Room Types & Pricing
-            </h2>
-            {formData.rooms.map((room, index) => (
-              <div key={index} className="space-y-6 pb-6 border-b border-gray-100 last:border-0 last:pb-0">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Room Types*</label>
-                    <select
-                      multiple
-                      value={room.roomTypes}
-                      onChange={(e) => {
-                        const options = Array.from(e.target.selectedOptions, option => option.value);
-                        handleRoomTypeChange(index, 'roomTypes', options);
-                      }}
-                      required
-                      className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm h-32"
-                    >
-                      {ROOM_TYPES_ENUM.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Allowed Extra Beds</label>
-                      <input
-                        type="number"
-                        value={room.allowedExtraBeds}
-                        onChange={(e) => handleRoomTypeChange(index, 'allowedExtraBeds', parseInt(e.target.value))}
-                        min="0"
-                        className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Number of Rooms</label>
-                      <input
-                        type="number"
-                        value={room.numberOfRooms}
-                        onChange={(e) => handleRoomTypeChange(index, 'numberOfRooms', parseInt(e.target.value))}
-                        min="1"
-                        className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Adult With Extra Bed (AWEB)</label>
-                    <div className="relative">
-                      <span className="absolute left-0 bottom-2 text-gray-500">₹</span>
-                      <input
-                        type="number"
-                        value={room.AWEB}
-                        onChange={(e) => handleRoomTypeChange(index, 'AWEB', parseInt(e.target.value))}
-                        min="0"
-                        className="w-full pl-4 px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Child With Extra Bed (CWEB)</label>
-                    <div className="relative">
-                      <span className="absolute left-0 bottom-2 text-gray-500">₹</span>
-                      <input
-                        type="number"
-                        value={room.CWEB}
-                        onChange={(e) => handleRoomTypeChange(index, 'CWEB', parseInt(e.target.value))}
-                        min="0"
-                        className="w-full pl-4 px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Child No Bed (CNB)</label>
-                    <div className="relative">
-                      <span className="absolute left-0 bottom-2 text-gray-500">₹</span>
-                      <input
-                        type="number"
-                        value={room.CNB}
-                        onChange={(e) => handleRoomTypeChange(index, 'CNB', parseInt(e.target.value))}
-                        min="0"
-                        className="w-full pl-4 px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-                {index > 0 && (
-                  <div className="flex justify-end">
+                </label>
+                {fileName && (
+                  <div className="mt-2 flex items-center text-sm text-gray-600">
+                    <span className="truncate">{fileName}</span>
                     <button
-                      type="button"
-                      onClick={() => removeRoom(index)}
-                      className="text-sm text-red-600 hover:text-red-800 flex items-center"
+                      onClick={removeFile}
+                      className="ml-2 text-gray-400 hover:text-gray-600"
                     >
-                      <FiTrash2 className="mr-1" /> Remove Room Type
+                      <FiX size={16} />
                     </button>
                   </div>
                 )}
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={addRoom}
-              className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-            >
-              <FiPlus className="mr-1" /> Add Another Room Type
-            </button>
+              <button
+                onClick={handleCSVUpload}
+                disabled={!csvFile || loading}
+                className={`px-4 py-2 rounded-md text-sm font-medium flex items-center ${
+                  csvFile
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <FiUpload className="mr-2" />
+                    Upload CSV
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Upload a CSV file with hotel data for bulk processing
+            </p>
           </div>
 
-          {/* Hotel Operations */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2 flex items-center">
-              <FiClock className="mr-2 text-gray-500" /> Hotel Operations
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Checkin Time*</label>
-                <input
-                  type="text"
-                  name="checkinTime"
-                  value={formData.checkinTime}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Checkout Time*</label>
-                <input
-                  type="text"
-                  name="checkoutTime"
-                  value={formData.checkoutTime}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Basic Information */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
+                <FiStar className="mr-2 text-blue-500" /> Basic Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hotel Name*
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter hotel name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Group Name
+                  </label>
+                  <input
+                    type="text"
+                    name="groupName"
+                    value={formData.groupName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter group name (if applicable)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Star Rating*
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="stars"
+                      value={formData.stars}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none bg-white"
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <option key={star} value={star}>
+                          {star} Star{star > 1 ? "s" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <svg
+                        className="fill-current h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Trip Destinations
+                  </label>
+                  {destinationsLoading ? (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Loading destinations...
+                    </div>
+                  ) : (
+                    <>
+                      <Select
+                        isMulti
+                        options={destinations}
+                        value={selectedDestinations}
+                        onChange={handleDestinationChange}
+                        className="basic-multi-select"
+                        classNamePrefix="select"
+                        placeholder="Select destinations..."
+                        isDisabled={destinationsLoading}
+                        noOptionsMessage={() => "No destinations available"}
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            minHeight: "42px",
+                            borderColor: "#d1d5db",
+                            "&:hover": {
+                              borderColor: "#d1d5db",
+                            },
+                          }),
+                        }}
+                      />
+                      {selectedDestinations.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {selectedDestinations.map((d) => (
+                            <span
+                              key={d.value}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {d.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Policies */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2 flex items-center">
-              <FiUsers className="mr-2 text-gray-500" /> Policies
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Child Age*</label>
-                <input
-                  type="number"
-                  name="childrenAgeRangeMin"
-                  value={formData.childrenAgeRangeMin}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Maximum Child Age*</label>
-                <input
-                  type="number"
-                  name="childrenAgeRangeMax"
-                  value={formData.childrenAgeRangeMax}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
+            {/* Location Details */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
+                <FiMapPin className="mr-2 text-blue-500" /> Location Details
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location*
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="e.g. City Center, Beachfront, etc."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City*
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter city"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    State*
+                  </label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter state"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    County
+                  </label>
+                  <input
+                    type="text"
+                    name="county"
+                    value={formData.county}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter county (if applicable)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Zipcode
+                  </label>
+                  <input
+                    type="text"
+                    name="zipcode"
+                    value={formData.zipcode}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter postal code"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Street Address
+                  </label>
+                  <input
+                    type="text"
+                    name="streetAddress"
+                    value={formData.streetAddress}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter street address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Locality
+                  </label>
+                  <input
+                    type="text"
+                    name="locality"
+                    value={formData.locality}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter locality"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Landmark
+                  </label>
+                  <input
+                    type="text"
+                    name="landmark"
+                    value={formData.landmark}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Nearby landmark"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Payment & Media */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-light text-gray-800 border-b pb-2 flex items-center">
-              <FiCreditCard className="mr-2 text-gray-500" /> Payment & Media
-            </h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Preference</label>
-                <select
-                  name="paymentPreference"
-                  value={formData.paymentPreference}
-                  onChange={handleChange}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
+            {/* Meal Plans */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+                Meal Plans
+              </h2>
+              <MealPlansSection
+                selectedMeals={selectedMeals}
+                onMealChange={handleMealChange}
+              />
+            </div>
+
+            {/* Room Types */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+                Room Types & Pricing
+              </h2>
+              {formData.rooms.map((room, index) => (
+                <div
+                  key={index}
+                  className="space-y-6 pb-6 border-b border-gray-200 last:border-0 last:pb-0"
                 >
-                  <option value="">Select Payment Preference</option>
-                  {PAYMENT_ENUM.map(payment => (
-                    <option key={payment} value={payment}>{payment}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <FiImage className="mr-2" /> Hotel Images Link
-                </label>
-                <input
-                  type="text"
-                  name="hotelImagesLink"
-                  value={formData.hotelImagesLink}
-                  onChange={handleChange}
-                  placeholder="https://example.com/hotel-gallery"
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
-                />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Room Types*
+                      </label>
+                      <div className="relative">
+                        <select
+                          multiple
+                          value={room.roomTypes}
+                          onChange={(e) => {
+                            const options = Array.from(
+                              e.target.selectedOptions,
+                              (option) => option.value
+                            );
+                            handleRoomTypeChange(index, "roomTypes", options);
+                          }}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-32"
+                        >
+                          {ROOM_TYPES_ENUM.map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg
+                            className="h-5 w-5 text-gray-400"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Hold Ctrl/Cmd to select multiple
+                      </p>
+                      {room.roomTypes.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {room.roomTypes.map((type) => (
+                            <span
+                              key={type}
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                            >
+                              {type}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Allowed Extra Beds
+                        </label>
+                        <input
+                          type="number"
+                          value={room.allowedExtraBeds}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "allowedExtraBeds",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Number of Rooms
+                        </label>
+                        <input
+                          type="number"
+                          value={room.numberOfRooms}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "numberOfRooms",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="1"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Adult With Extra Bed (AWEB)
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">₹</span>
+                        </div>
+                        <input
+                          type="number"
+                          value={room.AWEB}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "AWEB",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="0"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">.00</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Child With Extra Bed (CWEB)
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">₹</span>
+                        </div>
+                        <input
+                          type="number"
+                          value={room.CWEB}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "CWEB",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="0"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">.00</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Child No Bed (CNB)
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">₹</span>
+                        </div>
+                        <input
+                          type="number"
+                          value={room.CNB}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "CNB",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="0"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">.00</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {index > 0 && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => removeRoom(index)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        <FiTrash2 className="mr-1" /> Remove Room Type
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addRoom}
+                className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <FiPlus className="mr-1" /> Add Another Room Type
+              </button>
+            </div>
+
+            {/* Hotel Operations */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
+                <FiClock className="mr-2 text-blue-500" /> Hotel Operations
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Checkin Time*
+                  </label>
+                  <input
+                    type="text"
+                    name="checkinTime"
+                    value={formData.checkinTime}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="e.g. 12:00 PM"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Checkout Time*
+                  </label>
+                  <input
+                    type="text"
+                    name="checkoutTime"
+                    value={formData.checkoutTime}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="e.g. 10:00 AM"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 pt-8">
-            <button
-              type="button"
-              className="w-full sm:w-auto px-6 py-2 border border-gray-300 text-sm font-medium rounded text-gray-700 hover:bg-gray-50 focus:outline-none"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full sm:w-auto px-6 py-2 border border-transparent text-sm font-medium rounded text-white bg-black hover:bg-gray-800 focus:outline-none disabled:opacity-50"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                'Save Hotel Details'
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Policies */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
+                <FiUsers className="mr-2 text-blue-500" /> Policies
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Minimum Child Age*
+                  </label>
+                  <input
+                    type="number"
+                    name="childrenAgeRangeMin"
+                    value={formData.childrenAgeRangeMin}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Maximum Child Age*
+                  </label>
+                  <input
+                    type="number"
+                    name="childrenAgeRangeMax"
+                    value={formData.childrenAgeRangeMax}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment & Media */}
+            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
+                <FiCreditCard className="mr-2 text-blue-500" /> Payment & Media
+              </h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Payment Preference
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="paymentPreference"
+                      value={formData.paymentPreference}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none bg-white"
+                    >
+                      <option value="">Select Payment Preference</option>
+                      {PAYMENT_ENUM.map((payment) => (
+                        <option key={payment} value={payment}>
+                          {payment}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <svg
+                        className="fill-current h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <FiImage className="mr-2" /> Hotel Images Link
+                  </label>
+                  <input
+                    type="text"
+                    name="hotelImagesLink"
+                    value={formData.hotelImagesLink}
+                    onChange={handleChange}
+                    placeholder="https://example.com/hotel-gallery"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  {formData.hotelImagesLink && (
+                    <div className="mt-2">
+                      <a
+                        href={formData.hotelImagesLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        Preview Image Link
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 pt-8">
+              <button
+                type="button"
+                onClick={() => navigate('/hotels')}
+                className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full sm:w-auto px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : (
+                  "Save Hotel Details"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>
   );

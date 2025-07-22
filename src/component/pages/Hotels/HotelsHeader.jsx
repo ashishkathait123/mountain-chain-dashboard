@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiPlus } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import Select from "react-select";
 
 const HotelsHeader = ({ onSearch, onFilter }) => {
   const [searchTerm, setSearchTerm] = useState('');
+   const [destinations, setDestinations] = useState([]);
+    const [selectedDestinations, setSelectedDestinations] = useState([]);
+    const [destinationsLoading, setDestinationsLoading] = useState(true)
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
   const [filters, setFilters] = useState({
     mealPlans: [],
@@ -72,6 +77,53 @@ const navigate = useNavigate();
       paymentPreference: []
     });
     toast.info('Filters reset to default');
+  };
+ useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+          throw new Error("Authentication token not found");
+        }
+
+        setDestinationsLoading(true);
+
+        const response = await axios.get(
+          "https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("Destinations API Response:", response.data); // Log the response
+        if (response.data && Array.isArray(response.data.data)) {
+          const formattedDestinations = response.data.data.map((dest) => ({
+            value: dest._id,
+            label: dest.name,
+          }));
+          setDestinations(formattedDestinations);
+          toast.success("Destinations loaded successfully");
+        } else {
+          toast.error("Failed to load destinations");
+        }
+      } catch (error) {
+        console.error("Error fetching destinations:", error);
+        toast.error(`Failed to load destinations: ${error.message}`);
+      } finally {
+        setDestinationsLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
+
+ const handleDestinationChange = (selectedOptions) => {
+    setSelectedDestinations(selectedOptions);
+    const destinationIds = selectedOptions.map((option) => option.value);
+    setFormData((prev) => ({ ...prev, tripDestinations: destinationIds }));
   };
 
   return (
@@ -191,6 +243,36 @@ const navigate = useNavigate();
                         className="w-full p-2 border border-gray-300 rounded-md"
                       />
                     </div>
+
+
+<div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Trip Destinations
+                </label>
+                {destinationsLoading ? (
+                  <div className="text-sm text-gray-500">
+                    Loading destinations...
+                  </div>
+                ) : (
+                  <Select
+                    isMulti
+                    options={destinations}
+                    value={selectedDestinations}
+                    onChange={handleDestinationChange}
+                    className="basic-multi-select"
+                    classNamePrefix="select"
+                    placeholder="Select destinations..."
+                    isDisabled={destinationsLoading}
+                    noOptionsMessage={() => "No destinations available"}
+                  />
+                )}
+                {selectedDestinations.length > 0 && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    Selected:{" "}
+                    {selectedDestinations.map((d) => d.label).join(", ")}
+                  </div>
+                )}
+              </div>
 
                     {/* Payment Preference Filter */}
                     <div>

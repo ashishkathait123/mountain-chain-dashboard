@@ -45,6 +45,8 @@ import EditHotel from "../component/pages/Hotels/EditHotel";
 import TransportServices from "../component/pages/transport/TransportServices";
 import AddTransportService from "../component/pages/transport/AddTransportService";
 import CsvUploader from "../component/pages/Hotels/HotelPrice";
+import NewQuote from "../component/pages/trips/new-quote/NewQuote";
+import EditTransportService from "../component/pages/transport/EditTransportService";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -183,6 +185,30 @@ const AppRoutes = () => {
       >
       </Route>
 
+      <Route
+        path="/new-quote"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <NewQuote />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+
 
 
       <Route
@@ -234,6 +260,30 @@ const AppRoutes = () => {
         
       </Route>
       
+<Route
+        path="/service/update/:id"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <EditTransportService />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+
       <Route
         path="/sales-person/dashboard"
         element={

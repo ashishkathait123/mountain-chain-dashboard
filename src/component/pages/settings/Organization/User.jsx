@@ -32,21 +32,25 @@ const OrganizationUsers = () => {
     fetchUsers();
   }, []);
 
-  const handleDelete = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await axios.delete('https://mountain-chain.onrender.com/mountainchain/api/getusers', {
-          headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
-          data: { id: userId },
-        });
-        setUsers(users.filter(user => user._id !== userId));
-        setShowModal(false);
-      } catch (err) {
-        setError('Failed to delete user');
-        console.error('Delete error:', err.response?.data || err.message);
-      }
+ const handleDelete = async (userId) => {
+  if (window.confirm('Are you sure you want to delete this user?')) {
+    try {
+      await axios.delete(`https://mountain-chain.onrender.com/mountainchain/api/delete-user/${userId}`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` },
+      });
+      setUsers(users.filter(user => user._id !== userId));
+      setShowModal(false);
+      
     }
-  };
+    
+    
+    catch (err) {
+      setError('Failed to delete user');
+      console.error('Delete error:', err.response?.data || err.message);
+    }
+  }
+};
+
 
   const handleResendInvitation = (user) => {
     setSelectedUser(user);

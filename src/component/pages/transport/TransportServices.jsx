@@ -30,19 +30,21 @@ const TransportServices = () => {
             }
           }
         );
-
+console.log('Transport Services Response:', response.data);
         if (response.data && response.data.success) {
           // Transform API data to match UI structure
-          const transformedServices = response.data.data.map(service => ({
-            _id: service._id,
-            fromCity: service.fromCity,
-            toCity: service.toCity,
-            services: [
-              service.serviceName,
-              ...(service.itinerary ? [service.itinerary.title] : []),
-              ...service.tripDestinations
-            ].filter(Boolean) // Remove any undefined/null values
-          }));
+         const transformedServices = response.data.data.map(service => ({
+  _id: service._id,
+  fromCity: service.fromCity,
+  toCity: service.toCity,
+  price: service.price, // ✅ ADD THIS
+  services: [
+    service.serviceName,
+    ...(service.itinerary ? [service.itinerary.title] : []),
+    ...service.tripDestinations
+  ].filter(Boolean)
+}));
+
           
           setServices(transformedServices);
           setFilteredServices(transformedServices);
@@ -77,10 +79,8 @@ const TransportServices = () => {
 
   const handleAddService = () => navigate('/addservice');
   const toggleMenu = (id) => setActiveMenu(activeMenu === id ? null : id);
-  const handleCabType = (id) => {
-    console.log(`Cab type selected for service ${id}`);
-    setActiveMenu(null);
-  };
+  const handleEdit = (id) => navigate(`/service/update/${id}`);
+  
 
   if (loading) return (
     <div className="flex justify-center items-center h-screen">
@@ -128,6 +128,7 @@ const TransportServices = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Services</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -143,11 +144,16 @@ const TransportServices = () => {
                   <td className="px-6 py-4 text-gray-500">
                     <div className="flex flex-wrap gap-2">
                       {service.services.map((s, i) => (
+                        
                         <span key={i} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
                           {s}
                         </span>
+                        
                       ))}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500 capitalize">
+                    {service.price ? `₹${service.price}` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
                     <button 
@@ -160,10 +166,10 @@ const TransportServices = () => {
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                         <div className="py-1">
                           <button
-                            onClick={() => handleCabType(service._id)}
+                            onClick={() => handleEdit(service._id)}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
-                            Cab Type
+                          Edit Service
                           </button>
                         </div>
                       </div>

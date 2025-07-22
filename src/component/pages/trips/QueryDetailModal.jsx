@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FiMoreVertical } from 'react-icons/fi';
+
 const QueryDetailPage = ({ token }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuery, setEditedQuery] = useState(null);
@@ -19,6 +20,11 @@ const QueryDetailPage = ({ token }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
+
+
+  const handleNavigate = () => {
+    navigate("/new-quote");
+  };
 
   useEffect(() => {
     if (location.state?.query) {
@@ -51,7 +57,7 @@ const response = await axios.get(
     }
   };
 
-//folowup history
+//folowup history is to be fetched from the backend
 useEffect(() => {
   const fetchFollowUps = async () => {
     const token = sessionStorage.getItem('token');
@@ -700,11 +706,14 @@ useEffect(() => {
             </div>
 
             <div className="mt-6">
-              <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
-                <FiPlus className="mr-1" />
-                Create Custom Quotation
-              </button>
-            </div>
+      <button
+        onClick={handleNavigate}
+        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"
+      >
+        <FiPlus className="mr-1" />
+        Create Custom Quotation
+      </button>
+    </div>
           </div>
         )}
       </div>
