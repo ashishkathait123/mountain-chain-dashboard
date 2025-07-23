@@ -45,8 +45,8 @@ import EditHotel from "../component/pages/Hotels/EditHotel";
 import TransportServices from "../component/pages/transport/TransportServices";
 import AddTransportService from "../component/pages/transport/AddTransportService";
 import CsvUploader from "../component/pages/Hotels/HotelPrice";
-import NewQuote from "../component/pages/trips/new-quote/NewQuote";
 import EditTransportService from "../component/pages/transport/EditTransportService";
+import HotelQuotation from "../component/pages/trips/new-quote/HotelQuotation";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -202,7 +202,7 @@ const AppRoutes = () => {
             ]}
           >
             <Layout>
-              <NewQuote />
+              <HotelQuotation/>
             </Layout>
           </ProtectedRoute>
         }

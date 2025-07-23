@@ -41,13 +41,15 @@ const AddHotel = () => {
         allowedExtraBeds: 1,
         AWEB: 2000,
         CWEB: 1500,
-        CNB: 1000,
+        CWoEb: 1000,
+       BasePrice:2800,
         numberOfRooms: 10,
       },
     ],
     checkinTime: "12:00 PM",
     checkoutTime: "10:00 AM",
     childrenAgeRangeMin: 5,
+    perssonPerRoom: 2,
     childrenAgeRangeMax: 12,
     tripDestinations: [],
     paymentPreference: "",
@@ -160,10 +162,10 @@ const AddHotel = () => {
   };
 
   const handleMealChange = (selectedOptions) => {
-    const meals = selectedOptions.map((option) => option.value);
-    setFormData((prev) => ({ ...prev, meals }));
-    setSelectedMeals(selectedOptions);
-  };
+  const meals = selectedOptions.map((option) => option.value);
+  setSelectedMeals(selectedOptions);
+  setFormData((prev) => ({ ...prev, meals }));
+};
 
   const handleRoomTypeChange = (index, field, value) => {
     const updatedRooms = [...formData.rooms];
@@ -187,7 +189,8 @@ const AddHotel = () => {
           allowedExtraBeds: 1,
           AWEB: 2000,
           CWEB: 1500,
-          CNB: 1000,
+          CWoEb: 1000,
+          BasePrice: 2800,
           numberOfRooms: 10,
         },
       ],
@@ -305,9 +308,11 @@ const AddHotel = () => {
             {
               roomTypes: [],
               allowedExtraBeds: 1,
+              perssonPerRoom: 2,
               AWEB: 2000,
               CWEB: 1500,
-              CNB: 1000,
+              CWoEb: 1000,
+              BasePrice: 2800,
               numberOfRooms: 10,
             },
           ],
@@ -315,6 +320,7 @@ const AddHotel = () => {
           checkoutTime: "10:00 AM",
           childrenAgeRangeMin: 5,
           childrenAgeRangeMax: 12,
+          
           tripDestinations: [],
           paymentPreference: "",
           hotelImagesLink: "",
@@ -767,6 +773,24 @@ const AddHotel = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Person Per Room
+                        </label>
+                        <input
+                          type="number"
+                          value={room.perssonPerRoom}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "perssonPerRoom",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Number of Rooms
                         </label>
                         <input
@@ -812,6 +836,36 @@ const AddHotel = () => {
                         </div>
                       </div>
                     </div>
+
+
+<div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+Base Price
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">₹</span>
+                        </div>
+                        <input
+                          type="number"
+                          value={room.BasePrice}
+                          onChange={(e) =>
+                            handleRoomTypeChange(
+                              index,
+                              "BasePrice",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          min="0"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">.00</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Child With Extra Bed (CWEB)
@@ -840,7 +894,7 @@ const AddHotel = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Child No Bed (CNB)
+                        Child No Bed (CWoEb)
                       </label>
                       <div className="relative rounded-md shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -848,11 +902,11 @@ const AddHotel = () => {
                         </div>
                         <input
                           type="number"
-                          value={room.CNB}
+                          value={room.CWoEb}
                           onChange={(e) =>
                             handleRoomTypeChange(
                               index,
-                              "CNB",
+                              "CWoEb",
                               parseInt(e.target.value)
                             )
                           }

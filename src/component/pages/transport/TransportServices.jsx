@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FiSearch, FiPlus, FiMoreVertical } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const TransportServices = () => {
   const [services, setServices] = useState([]);
@@ -13,53 +14,53 @@ const TransportServices = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchTransportServices = async () => {
-      try {
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication token not found');
-        }
+ // Define the fetch function outside useEffect so it's reusable
+const fetchTransportServices = async () => {
+  setLoading(true);
+  try {
+    const token = sessionStorage.getItem('token');
+    if (!token) throw new Error('Authentication token not found');
 
-        const response = await axios.get(
-          'https://mountain-chain.onrender.com/mountainchain/api/transport/list',
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-console.log('Transport Services Response:', response.data);
-        if (response.data && response.data.success) {
-          // Transform API data to match UI structure
-         const transformedServices = response.data.data.map(service => ({
-  _id: service._id,
-  fromCity: service.fromCity,
-  toCity: service.toCity,
-  price: service.price, // ✅ ADD THIS
-  services: [
-    service.serviceName,
-    ...(service.itinerary ? [service.itinerary.title] : []),
-    ...service.tripDestinations
-  ].filter(Boolean)
-}));
-
-          
-          setServices(transformedServices);
-          setFilteredServices(transformedServices);
-        } else {
-          throw new Error('Failed to fetch transport services');
+    const response = await axios.get(
+      'https://mountain-chain.onrender.com/mountainchain/api/transport/list',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (err) {
-        console.error('Error fetching transport services:', err);
-      } finally {
-        setLoading(false);
       }
-    };
+    );
 
-    fetchTransportServices();
-  }, []);
+    if (response.data && response.data.success) {
+      const transformedServices = response.data.data.map(service => ({
+        _id: service._id,
+        fromCity: service.fromCity,
+        toCity: service.toCity,
+        price: service.price,
+        services: [
+          service.serviceName,
+          ...(service.itinerary ? [service.itinerary.title] : []),
+          ...service.tripDestinations
+        ].filter(Boolean)
+      }));
+
+      setServices(transformedServices);
+      setFilteredServices(transformedServices);
+    } else {
+      throw new Error('Failed to fetch transport services');
+    }
+  } catch (err) {
+    console.error('Error fetching transport services:', err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Call it once when the component mounts
+useEffect(() => {
+  fetchTransportServices();
+}, []);
+
 
   useEffect(() => {
     const results = services.filter(service =>
@@ -80,7 +81,35 @@ console.log('Transport Services Response:', response.data);
   const handleAddService = () => navigate('/addservice');
   const toggleMenu = (id) => setActiveMenu(activeMenu === id ? null : id);
   const handleEdit = (id) => navigate(`/service/update/${id}`);
+   
+  const handleDelete = async (serviceId) => {
+  if (window.confirm('Are you sure you want to delete this service?')) {
+    try {
+      const token = sessionStorage.getItem('token');
+      if (!token) throw new Error('Token not found');
+
+      await axios.delete(`https://mountain-chain.onrender.com/mountainchain/api/transport/delete/${serviceId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+
+      });
+
+      // Remove the deleted service from UI
+      const updatedServices = services.filter(service => service._id !== serviceId);
+      setServices(updatedServices);
+            const toastId = toast.loading("Updating service...");
+toast.dismiss(toastId);
+      setFilteredServices(updatedServices);
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      alert('Failed to delete service. Please try again.');
+    }
+  }
   
+};
+
 
   if (loading) return (
     <div className="flex justify-center items-center h-screen">
@@ -103,21 +132,48 @@ console.log('Transport Services Response:', response.data);
               New Service
             </button>
           </div>
-          <div className="flex justify-between items-center mt-4">
-            <p className="text-sm text-gray-600">Showing {filteredServices.length} Items</p>
-            <div className="relative w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiSearch className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search services..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
+         <div className="flex justify-between items-center mt-4">
+  <p className="text-sm text-gray-600">Showing {filteredServices.length} Items</p>
+
+  <div className="flex items-center gap-3">
+    <div className="relative w-64">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <FiSearch className="text-gray-400" />
+      </div>
+      <input
+        type="text"
+        placeholder="Search services..."
+        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+    </div>
+
+    {/* Reload SVG Button */}
+{/* Reload SVG Button */}
+<button
+  onClick={fetchTransportServices}
+  className="text-gray-600 hover:text-blue-600 transition"
+  title="Reload"
+  disabled={loading} // Optional: disable button while loading
+>
+  <svg
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`w-6 h-6 ${loading ? 'animate-spin text-blue-600' : ''}`}
+  >
+    <path d="M16.023 9.348h4.992M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+  </svg>
+</button>
+
+  </div>
+</div>
+
         </div>
 
         {/* Services Table */}
@@ -172,6 +228,15 @@ console.log('Transport Services Response:', response.data);
                           Edit Service
                           </button>
                         </div>
+                        <div className="py-1">
+  <button
+    onClick={() => handleDelete(service._id)}
+    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+  >
+    Delete Service
+  </button>
+</div>
+
                       </div>
                     )}
                   </td>

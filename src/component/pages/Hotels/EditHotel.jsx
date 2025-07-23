@@ -29,7 +29,8 @@ const EditHotel = () => {
       allowedExtraBeds: 1,
       AWEB: 2000,
       CWEB: 1500,
-      CNB: 1000,
+      CWoEb: 1000,
+       BasePrice:2800,
       numberOfRooms: 10
     }],
     checkinTime: "12:00 PM",
@@ -158,7 +159,8 @@ console.log("Hotel fetch response", response.data);
           allowedExtraBeds: 1,
           AWEB: 2000,
           CWEB: 1500,
-          CNB: 1000,
+          CWoEb: 1000,
+           BasePrice:2800,
           numberOfRooms: 10
         }
       ]
@@ -422,13 +424,13 @@ console.log("Hotel fetch response", response.data);
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Child No Bed (CNB)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Child No Bed (CWoEb)</label>
                     <div className="relative">
                       <span className="absolute left-0 bottom-2 text-gray-500">₹</span>
                       <input
                         type="number"
-                        value={room.CNB}
-                        onChange={(e) => handleRoomTypeChange(index, 'CNB', parseInt(e.target.value))}
+                        value={room.CWoEb}
+                        onChange={(e) => handleRoomTypeChange(index, 'CWoEb', parseInt(e.target.value))}
                         min="0"
                         className="w-full pl-4 px-0 py-2 border-0 border-b border-gray-300 focus:border-black focus:ring-0 sm:text-sm"
                       />
