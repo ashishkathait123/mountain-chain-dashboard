@@ -20,7 +20,7 @@ import OrganizationEmailTemplates from "../component/pages/settings/Organization
 import OrganizationHotelPaymentPrefs from "../component/pages/settings/Organization/HotelPaymentPrefs";
 import OrganizationTermsConditions from "../component/pages/settings/Organization/TermConditions";
 import OrganizationInclusionsExclusions from "../component/pages/settings/Organization/InclusionsExclusions";
-import OrganizationCabTypes from "../component/pages/settings/Organization/CabTypes";
+import SuppliersPage from "../component/pages/settings/Organization/CabTypes";
 import OrganizationTourists from "../component/pages/settings/Organization/Tourists";
 import AddUser from "../component/pages/settings/Organization/Invitemember";
 import CreateAccountuser from "../component/Anyuserform/anyuserCreateAccount";
@@ -47,6 +47,8 @@ import AddTransportService from "../component/pages/transport/AddTransportServic
 import CsvUploader from "../component/pages/Hotels/HotelPrice";
 import EditTransportService from "../component/pages/transport/EditTransportService";
 import HotelQuotation from "../component/pages/trips/new-quote/HotelQuotation";
+import SuppliersListPage from "../component/pages/suppliers/SuppliersListPage";
+import SupplierForm from "../component/pages/suppliers/SupplierForm";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -228,7 +230,7 @@ const AppRoutes = () => {
             ]}
           >
             <Layout>
-              <TransportServices />
+              <TransportServices/>
             </Layout>
           </ProtectedRoute>
         }
@@ -283,6 +285,81 @@ const AppRoutes = () => {
         }
       >
       </Route>
+  
+
+<Route
+        path="/suppliers/new"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <SupplierForm />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+<Route
+        path="/suppliers/edit/:id"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <SupplierForm />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+
+
+<Route
+        path="supplier-list"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <SuppliersListPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      >
+      </Route>
+
+
 
       <Route
         path="/sales-person/dashboard"
@@ -354,7 +431,7 @@ const AppRoutes = () => {
           path="inclusions-exclusions"
           element={<OrganizationInclusionsExclusions />}
         />
-        <Route path="cab-types" element={<OrganizationCabTypes />} />
+        <Route path="cab-types" element={<SuppliersPage />} />
         <Route path="tourists" element={<OrganizationTourists />} />
         <Route path="add-destination" element={<DestinationForm />} />
         <Route path="tripsource-form" element={<TripsourceForm />} />

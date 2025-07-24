@@ -41,15 +41,15 @@ const AddHotel = () => {
         allowedExtraBeds: 1,
         AWEB: 2000,
         CWEB: 1500,
-        CWoEb: 1000,
-       BasePrice:2800,
+        CWoEB: 1000,
+        BasePrice: 2800,
         numberOfRooms: 10,
+        personPerRoom: 2,
       },
     ],
     checkinTime: "12:00 PM",
     checkoutTime: "10:00 AM",
     childrenAgeRangeMin: 5,
-    perssonPerRoom: 2,
     childrenAgeRangeMax: 12,
     tripDestinations: [],
     paymentPreference: "",
@@ -63,6 +63,7 @@ const AddHotel = () => {
   const [destinationsLoading, setDestinationsLoading] = useState(true);
   const [csvFile, setCsvFile] = useState(null);
   const [fileName, setFileName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const ROOM_TYPES_ENUM = [
@@ -162,10 +163,10 @@ const AddHotel = () => {
   };
 
   const handleMealChange = (selectedOptions) => {
-  const meals = selectedOptions.map((option) => option.value);
-  setSelectedMeals(selectedOptions);
-  setFormData((prev) => ({ ...prev, meals }));
-};
+    const meals = selectedOptions.map((option) => option.value);
+    setSelectedMeals(selectedOptions);
+    setFormData((prev) => ({ ...prev, meals }));
+  };
 
   const handleRoomTypeChange = (index, field, value) => {
     const updatedRooms = [...formData.rooms];
@@ -192,6 +193,7 @@ const AddHotel = () => {
           CWoEb: 1000,
           BasePrice: 2800,
           numberOfRooms: 10,
+          personPerRoom: 2,
         },
       ],
     }));
@@ -226,7 +228,18 @@ const AddHotel = () => {
       );
 
       if (response.data.success) {
-        toast.success("Hotels uploaded successfully from CSV!");
+        toast.success(
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Hotels uploaded successfully from CSV!</span>
+          </div>,
+          {
+            className: "bg-green-50 text-green-800",
+            progressClassName: "bg-green-300",
+          }
+        );
         setCsvFile(null);
         setFileName("");
         navigate('/hotels');
@@ -235,7 +248,18 @@ const AddHotel = () => {
       }
     } catch (error) {
       console.error("CSV Upload Error:", error);
-      toast.error("Error uploading CSV file.");
+      toast.error(
+        <div className="flex items-center">
+          <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          <span>Error uploading CSV file.</span>
+        </div>,
+        {
+          className: "bg-red-50 text-red-800",
+          progressClassName: "bg-red-300",
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -256,7 +280,7 @@ const AddHotel = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmitting(true);
 
     const cleanedData = {
       ...formData,
@@ -287,7 +311,24 @@ const AddHotel = () => {
       );
 
       if (response.data.success) {
-        toast.success("Hotel added successfully!");
+        toast.success(
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <div>
+              <p className="font-medium">Hotel added successfully!</p>
+              <p className="text-sm">Redirecting to hotels list...</p>
+            </div>
+          </div>,
+          {
+            className: "bg-green-50 text-green-800",
+            progressClassName: "bg-green-300",
+            autoClose: 2000,
+            onClose: () => navigate('/hotels')
+          }
+        );
+        
         setFormData({
           ...formData,
           name: "",
@@ -308,7 +349,7 @@ const AddHotel = () => {
             {
               roomTypes: [],
               allowedExtraBeds: 1,
-              perssonPerRoom: 2,
+              personPerRoom: 2,
               AWEB: 2000,
               CWEB: 1500,
               CWoEb: 1000,
@@ -320,38 +361,60 @@ const AddHotel = () => {
           checkoutTime: "10:00 AM",
           childrenAgeRangeMin: 5,
           childrenAgeRangeMax: 12,
-          
           tripDestinations: [],
           paymentPreference: "",
           hotelImagesLink: "",
         });
-        navigate('/hotels');
       } else {
-        toast.error("Failed to add hotel.");
+        toast.error(
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <span>Failed to add hotel.</span>
+          </div>,
+          {
+            className: "bg-red-50 text-red-800",
+            progressClassName: "bg-red-300",
+          }
+        );
       }
     } catch (error) {
       console.error("Error adding hotel:", error);
-      toast.error("Server error while adding hotel.");
+      toast.error(
+        <div className="flex items-center">
+          <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          <span>Server error while adding hotel.</span>
+        </div>,
+        {
+          className: "bg-red-50 text-red-800",
+          progressClassName: "bg-red-300",
+        }
+      );
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden p-6 mb-8 transition-all duration-300 hover:shadow-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-light text-gray-900">Add New Hotel</h1>
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              Add New Hotel
+            </h1>
             <p className="mt-2 text-gray-500">
               Complete the form to register your property
             </p>
           </div>
 
           {/* Bulk CSV Upload */}
-          <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-200">
+          <div className="mb-10 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 transition-all duration-300 hover:border-blue-200">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-              <FiUpload className="mr-2" /> Bulk Upload via CSV
+              <FiUpload className="mr-2 text-blue-600" /> Bulk Upload via CSV
             </h2>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               <div className="relative w-full">
@@ -363,18 +426,19 @@ const AddHotel = () => {
                     onChange={handleFileChange}
                     className="block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
-                      file:rounded-md file:border-0
+                      file:rounded-lg file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+                      file:bg-gradient-to-r file:from-blue-100 file:to-indigo-100 file:text-blue-700
+                      hover:file:bg-gradient-to-r hover:file:from-blue-200 hover:file:to-indigo-200
+                      transition-all duration-300"
                   />
                 </label>
                 {fileName && (
-                  <div className="mt-2 flex items-center text-sm text-gray-600">
+                  <div className="mt-2 flex items-center text-sm text-gray-600 bg-white px-3 py-1 rounded-lg border border-gray-200">
                     <span className="truncate">{fileName}</span>
                     <button
                       onClick={removeFile}
-                      className="ml-2 text-gray-400 hover:text-gray-600"
+                      className="ml-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                     >
                       <FiX size={16} />
                     </button>
@@ -384,9 +448,9 @@ const AddHotel = () => {
               <button
                 onClick={handleCSVUpload}
                 disabled={!csvFile || loading}
-                className={`px-4 py-2 rounded-md text-sm font-medium flex items-center ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-all duration-300 ${
                   csvFile
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg"
                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
               >
@@ -429,7 +493,7 @@ const AddHotel = () => {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                 <FiStar className="mr-2 text-blue-500" /> Basic Information
               </h2>
@@ -444,7 +508,7 @@ const AddHotel = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter hotel name"
                   />
                 </div>
@@ -457,7 +521,7 @@ const AddHotel = () => {
                     name="groupName"
                     value={formData.groupName}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter group name (if applicable)"
                   />
                 </div>
@@ -471,7 +535,7 @@ const AddHotel = () => {
                       value={formData.stars}
                       onChange={handleChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 appearance-none bg-white"
                     >
                       {[1, 2, 3, 4, 5].map((star) => (
                         <option key={star} value={star}>
@@ -531,13 +595,39 @@ const AddHotel = () => {
                         isDisabled={destinationsLoading}
                         noOptionsMessage={() => "No destinations available"}
                         styles={{
-                          control: (base) => ({
+                          control: (base, state) => ({
                             ...base,
                             minHeight: "42px",
-                            borderColor: "#d1d5db",
+                            borderColor: state.isFocused ? "#3b82f6" : "#d1d5db",
+                            boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
                             "&:hover": {
-                              borderColor: "#d1d5db",
+                              borderColor: state.isFocused ? "#3b82f6" : "#d1d5db",
                             },
+                            borderRadius: "0.5rem",
+                            transition: "all 0.3s ease",
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            backgroundColor: state.isSelected
+                              ? "#3b82f6"
+                              : state.isFocused
+                              ? "#e0e7ff"
+                              : "white",
+                            color: state.isSelected ? "white" : "#1e293b",
+                            "&:active": {
+                              backgroundColor: "#3b82f6",
+                              color: "white",
+                            },
+                          }),
+                          multiValue: (base) => ({
+                            ...base,
+                            backgroundColor: "#e0e7ff",
+                            borderRadius: "0.375rem",
+                          }),
+                          multiValueLabel: (base) => ({
+                            ...base,
+                            color: "#3b82f6",
+                            fontWeight: "500",
                           }),
                         }}
                       />
@@ -546,7 +636,7 @@ const AddHotel = () => {
                           {selectedDestinations.map((d) => (
                             <span
                               key={d.value}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800"
                             >
                               {d.label}
                             </span>
@@ -560,7 +650,7 @@ const AddHotel = () => {
             </div>
 
             {/* Location Details */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                 <FiMapPin className="mr-2 text-blue-500" /> Location Details
               </h2>
@@ -575,7 +665,7 @@ const AddHotel = () => {
                     value={formData.location}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="e.g. City Center, Beachfront, etc."
                   />
                 </div>
@@ -589,7 +679,7 @@ const AddHotel = () => {
                     value={formData.city}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter city"
                   />
                 </div>
@@ -603,7 +693,7 @@ const AddHotel = () => {
                     value={formData.state}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter state"
                   />
                 </div>
@@ -616,7 +706,7 @@ const AddHotel = () => {
                     name="county"
                     value={formData.county}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter county (if applicable)"
                   />
                 </div>
@@ -629,7 +719,7 @@ const AddHotel = () => {
                     name="zipcode"
                     value={formData.zipcode}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter postal code"
                   />
                 </div>
@@ -642,7 +732,7 @@ const AddHotel = () => {
                     name="streetAddress"
                     value={formData.streetAddress}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter street address"
                   />
                 </div>
@@ -655,7 +745,7 @@ const AddHotel = () => {
                     name="locality"
                     value={formData.locality}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Enter locality"
                   />
                 </div>
@@ -668,7 +758,7 @@ const AddHotel = () => {
                     name="landmark"
                     value={formData.landmark}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="Nearby landmark"
                   />
                 </div>
@@ -676,7 +766,7 @@ const AddHotel = () => {
             </div>
 
             {/* Meal Plans */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
                 Meal Plans
               </h2>
@@ -687,7 +777,7 @@ const AddHotel = () => {
             </div>
 
             {/* Room Types */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
                 Room Types & Pricing
               </h2>
@@ -713,7 +803,7 @@ const AddHotel = () => {
                             handleRoomTypeChange(index, "roomTypes", options);
                           }}
                           required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-32"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 h-32"
                         >
                           {ROOM_TYPES_ENUM.map((type) => (
                             <option key={type} value={type}>
@@ -744,7 +834,7 @@ const AddHotel = () => {
                           {room.roomTypes.map((type) => (
                             <span
                               key={type}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-green-100 to-teal-100 text-green-800"
                             >
                               {type}
                             </span>
@@ -768,7 +858,7 @@ const AddHotel = () => {
                             )
                           }
                           min="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                       </div>
                       <div>
@@ -777,16 +867,16 @@ const AddHotel = () => {
                         </label>
                         <input
                           type="number"
-                          value={room.perssonPerRoom}
+                          value={room.personPerRoom}
                           onChange={(e) =>
                             handleRoomTypeChange(
                               index,
-                              "perssonPerRoom",
+                              "personPerRoom",
                               parseInt(e.target.value)
                             )
                           }
                           min="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                       </div>
                       <div>
@@ -804,7 +894,7 @@ const AddHotel = () => {
                             )
                           }
                           min="1"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                       </div>
                     </div>
@@ -814,7 +904,7 @@ const AddHotel = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Adult With Extra Bed (AWEB)
                       </label>
-                      <div className="relative rounded-md shadow-sm">
+                      <div className="relative rounded-lg shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">₹</span>
                         </div>
@@ -829,20 +919,18 @@ const AddHotel = () => {
                             )
                           }
                           min="0"
-                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">.00</span>
                         </div>
                       </div>
                     </div>
-
-
-<div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-Base Price
+                        Base Price
                       </label>
-                      <div className="relative rounded-md shadow-sm">
+                      <div className="relative rounded-lg shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">₹</span>
                         </div>
@@ -857,20 +945,18 @@ Base Price
                             )
                           }
                           min="0"
-                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">.00</span>
                         </div>
                       </div>
                     </div>
-
-                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Child With Extra Bed (CWEB)
                       </label>
-                      <div className="relative rounded-md shadow-sm">
+                      <div className="relative rounded-lg shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">₹</span>
                         </div>
@@ -885,7 +971,7 @@ Base Price
                             )
                           }
                           min="0"
-                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">.00</span>
@@ -896,7 +982,7 @@ Base Price
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Child No Bed (CWoEb)
                       </label>
-                      <div className="relative rounded-md shadow-sm">
+                      <div className="relative rounded-lg shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">₹</span>
                         </div>
@@ -911,7 +997,7 @@ Base Price
                             )
                           }
                           min="0"
-                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         />
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                           <span className="text-gray-500 sm:text-sm">.00</span>
@@ -924,7 +1010,7 @@ Base Price
                       <button
                         type="button"
                         onClick={() => removeRoom(index)}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300"
                       >
                         <FiTrash2 className="mr-1" /> Remove Room Type
                       </button>
@@ -935,14 +1021,14 @@ Base Price
               <button
                 type="button"
                 onClick={addRoom}
-                className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
               >
                 <FiPlus className="mr-1" /> Add Another Room Type
               </button>
             </div>
 
             {/* Hotel Operations */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                 <FiClock className="mr-2 text-blue-500" /> Hotel Operations
               </h2>
@@ -957,7 +1043,7 @@ Base Price
                     value={formData.checkinTime}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="e.g. 12:00 PM"
                   />
                 </div>
@@ -971,7 +1057,7 @@ Base Price
                     value={formData.checkoutTime}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder="e.g. 10:00 AM"
                   />
                 </div>
@@ -979,7 +1065,7 @@ Base Price
             </div>
 
             {/* Policies */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                 <FiUsers className="mr-2 text-blue-500" /> Policies
               </h2>
@@ -995,7 +1081,7 @@ Base Price
                     onChange={handleChange}
                     required
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   />
                 </div>
                 <div>
@@ -1009,14 +1095,14 @@ Base Price
                     onChange={handleChange}
                     required
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   />
                 </div>
               </div>
             </div>
 
             {/* Payment & Media */}
-            <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
+            <div className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 flex items-center">
                 <FiCreditCard className="mr-2 text-blue-500" /> Payment & Media
               </h2>
@@ -1030,7 +1116,7 @@ Base Price
                       name="paymentPreference"
                       value={formData.paymentPreference}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 appearance-none bg-white"
                     >
                       <option value="">Select Payment Preference</option>
                       {PAYMENT_ENUM.map((payment) => (
@@ -1060,7 +1146,7 @@ Base Price
                     value={formData.hotelImagesLink}
                     onChange={handleChange}
                     placeholder="https://example.com/hotel-gallery"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   />
                   {formData.hotelImagesLink && (
                     <div className="mt-2">
@@ -1068,7 +1154,7 @@ Base Price
                         href={formData.hotelImagesLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        className="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-300"
                       >
                         Preview Image Link
                       </a>
@@ -1083,16 +1169,16 @@ Base Price
               <button
                 type="button"
                 onClick={() => navigate('/hotels')}
-                className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all duration-300"
               >
-                {loading ? (
+                {isSubmitting ? (
                   <span className="flex items-center justify-center">
                     <svg
                       className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
@@ -1123,7 +1209,19 @@ Base Price
             </div>
           </form>
         </div>
-        <ToastContainer position="top-right" autoClose={3000} />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          toastClassName="border border-gray-200 shadow-lg"
+          progressStyle={{ height: "3px" }}
+        />
       </div>
     </div>
   );

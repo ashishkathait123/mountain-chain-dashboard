@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import axios from 'axios';
+import Select from 'react-select';
 import { useNavigate } from 'react-router-dom';
 import CityDropdowns from './CityDropdowns';
 import toast from 'react-hot-toast';
@@ -22,7 +23,12 @@ const AddTransportService = () => {
       title: '',
       description: ''
     }
+
   });
+
+  const [destinations, setDestinations] = useState([]);
+  const [selectedDestinations, setSelectedDestinations] = useState([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(true);
   const [csvFile, setCsvFile] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -46,13 +52,13 @@ const AddTransportService = () => {
     }));
   };
 
-  const handleAddDestination = (destination) => {
-    if (destination && !formData.tripDestinations.includes(destination)) {
-      setFormData(prev => ({
-        ...prev,
-        tripDestinations: [...prev.tripDestinations, destination]
-      }));
-    }
+  const handleDestinationChange = (selectedOptions) => {
+    setSelectedDestinations(selectedOptions || []);
+    const destinationIds = (selectedOptions || []).map(option => option.value);
+    setFormData(prev => ({
+      ...prev,
+      tripDestinations: destinationIds
+    }));
   };
 
   const handleRemoveDestination = (index) => {
@@ -74,6 +80,46 @@ const AddTransportService = () => {
     setCsvFile(null);
     setFileName('');
   };
+
+// --- NEW: useEffect to fetch destinations ---
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+          throw new Error("Authentication token not found");
+        }
+
+        setDestinationsLoading(true);
+
+        const response = await axios.get(
+          "https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data && Array.isArray(response.data.data)) {
+          const formattedDestinations = response.data.data.map((dest) => ({
+            value: dest._id,
+            label: dest.name,
+          }));
+          setDestinations(formattedDestinations);
+        } else {
+          toast.error("Failed to load destinations in the expected format.");
+        }
+      } catch (error) {
+        console.error("Error fetching destinations:", error);
+        toast.error(`Failed to load destinations: ${error.message}`);
+      } finally {
+        setDestinationsLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
 
   const handleCSVUpload = async () => {
     if (!csvFile) {
@@ -252,7 +298,7 @@ const AddTransportService = () => {
                 </button>
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Bulk upload transport services via CSV file
+                Bulk upload transport services via CSV file make sure the trip destinations are correctly formatted which are available in the system.
               </p>
             </div>
           </div>
@@ -311,54 +357,22 @@ const AddTransportService = () => {
                 />
               </div>
 
-              <div>
+               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Trip Destinations
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Add destination and press Enter"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddDestination(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const input = document.querySelector('input[placeholder="Add destination and press Enter"]');
-                      if (input.value) {
-                        handleAddDestination(input.value);
-                        input.value = '';
-                      }
-                    }}
-                    className="px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tripDestinations.map((dest, index) => (
-                    <span 
-                      key={index} 
-                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      {dest}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveDestination(index)}
-                        className="ml-1.5 inline-flex text-blue-600 hover:text-blue-800 focus:outline-none"
-                      >
-                        <FiX size={14} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
+                <Select
+                  isMulti
+                  options={destinations}
+                  value={selectedDestinations}
+                  onChange={handleDestinationChange}
+                  isLoading={destinationsLoading}
+                  isDisabled={destinationsLoading}
+                  placeholder="Select destinations..."
+                  noOptionsMessage={() => "No destinations found"}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
