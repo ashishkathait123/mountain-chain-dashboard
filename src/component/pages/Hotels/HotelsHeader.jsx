@@ -153,7 +153,7 @@ const navigate = useNavigate();
 
     <button
       onClick={onAddNew}
-      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto"
+            className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-70 transition flex items-center"
     >
       <FiPlus className="mr-2" />
       Add New

@@ -21,9 +21,13 @@ const QueryDetailPage = ({ token }) => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-
+  // UPDATED: This function now passes the entire query object to the new route
   const handleNavigate = () => {
-    navigate("/new-quote");
+    if (editedQuery) {
+      navigate("/new-quote", { state: { query: editedQuery } });
+    } else {
+      toast.error("Query data is not available to create a quotation.");
+    }
   };
 
   useEffect(() => {
@@ -37,17 +41,15 @@ const QueryDetailPage = ({ token }) => {
 
   const fetchQuery = async () => {
     try {
-    const token = sessionStorage.getItem('token'); // ✅ Declare token first
-console.log("Token being used:", token); // ✅ Log the token to check its value
-const response = await axios.get(
-  `https://mountain-chain.onrender.com/mountainchain/api/destination/getallquerys/${id}`,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  }
-);
-
+    const token = sessionStorage.getItem('token');
+    const response = await axios.get(
+      `https://mountain-chain.onrender.com/mountainchain/api/destination/getallquerys/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
       setEditedQuery(response.data);
       setLoading(false);
     } catch (error) {
@@ -57,12 +59,10 @@ const response = await axios.get(
     }
   };
 
-//folowup history is to be fetched from the backend
 useEffect(() => {
   const fetchFollowUps = async () => {
     const token = sessionStorage.getItem('token');
     if (!token || !editedQuery?._id) return;
-
     try {
       const response = await axios.get(
         `https://mountain-chain.onrender.com/mountainchain/api/destination/getfollowupsquery?queryId=${editedQuery._id}`,
@@ -72,13 +72,12 @@ useEffect(() => {
           }
         }
       );
-      setFollowUps(response.data); // set response array
+      setFollowUps(response.data); 
     } catch (error) {
       console.error("Error fetching follow-ups:", error);
       toast.error("Failed to load follow-up history.");
     }
   };
-
   fetchFollowUps();
 }, [editedQuery?._id]);
 
@@ -112,7 +111,6 @@ useEffect(() => {
     toast.error("User not authenticated. Please login again.");
     return;
   }
-
   try {
     const response = await axios.put(
       `http://localhost:5500/mountainchain/api/destination/addfollowups/${followUpId}`,
@@ -125,12 +123,9 @@ useEffect(() => {
         }
       }
     );
-
-    // Update the local state to reflect the change
     setFollowUps(prev => prev.map(followUp => 
       followUp._id === followUpId ? { ...followUp, status: "Solved" } : followUp
     ));
-    
     toast.success('Follow-up marked as resolved!');
   } catch (error) {
     console.error('Error marking follow-up as resolved:', error);
@@ -143,127 +138,73 @@ useEffect(() => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      // Replace with your actual update endpoint
-      // await axios.put(`/api/queries/${editedQuery._id}`, editedQuery, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
       setIsEditing(false);
       toast.success('Query updated successfully!');
     } catch (error) {
       toast.error('Failed to update query');
-      console.error('Error updating query:', error);
     } finally {
       setSaving(false);
     }
   };
 
   const handleAddComment = async () => {
-  if (!newComment.trim()) {
-    toast.error('Please enter a comment');
-    return;
-  }
-
-  const token = sessionStorage.getItem('token');
-  if (!token) {
-    toast.error("User not authenticated. Please login again.");
-    return;
-  }
-
-  try {
-    setSaving(true);
-
-    const response = await axios.post(
-      `https://mountain-chain.onrender.com/mountainchain/api/destination/addfollowups/${editedQuery._id}`,
-      {
-        message: newComment,
-        dueDate: isActionable ? dueDate : undefined,
-        status: isActionable ? "Not Solved" : undefined
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+    if (!newComment.trim()) {
+      toast.error('Please enter a comment');
+      return;
+    }
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      toast.error("User not authenticated. Please login again.");
+      return;
+    }
+    try {
+      setSaving(true);
+      const response = await axios.post(
+        `https://mountain-chain.onrender.com/mountainchain/api/destination/addfollowups/${editedQuery._id}`,
+        {
+          message: newComment,
+          dueDate: isActionable ? dueDate : undefined,
+          status: isActionable ? "Not Solved" : undefined
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    );
-
-    const newFollowUp = {
-      comment: newComment,
-      createdAt: new Date().toISOString(),
-      actionable: isActionable,
-      dueDate: isActionable ? dueDate : null,
-      createdBy: {
-        _id: response.data.createdBy?._id || "current-user-id",
-        name: response.data.createdBy?.name || "Current User"
-      }
-    };
-
-    setEditedQuery(prev => ({
-      ...prev,
-      followUps: [...(prev.followUps || []), newFollowUp]
-    }));
-
-    setNewComment('');
-    setIsActionable(false);
-    setDueDate('');
-    toast.success('Follow-up added successfully!');
-  } catch (error) {
-    console.error('Error adding follow-up:', error.response?.data || error.message);
-    toast.error(error.response?.data?.message || 'Failed to add follow-up');
-  } finally {
-    setSaving(false);
-  }
+      );
+      setNewComment('');
+      setIsActionable(false);
+      setDueDate('');
+      toast.success('Follow-up added successfully!');
+    } catch (error) {
+      console.error('Error adding follow-up:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Failed to add follow-up');
+    } finally {
+      setSaving(false);
+    }
 };
-
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   const handleBack = () => {
     navigate(-1);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (!editedQuery) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-red-500">Query not found</p>
-        <button 
-          onClick={handleBack}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
+  if (!editedQuery) return <div className="p-4 text-center"><p className="text-red-500">Query not found</p><button onClick={handleBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Go Back</button></div>;
 
   return (
+    // ... JSX remains the same, no changes needed here
     <div className="bg-white rounded-lg shadow-sm w-full max-w-6xl mx-auto my-4 overflow-y-auto text-black">
       {/* Header */}
       <div className="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
@@ -718,6 +659,7 @@ useEffect(() => {
         )}
       </div>
     </div>
+
   );
 };
 

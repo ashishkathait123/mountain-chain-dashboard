@@ -51,7 +51,7 @@ const Navigation = ({ onLogout }) => {
       roles: ['Admin', 'Sales Head', 'Sales Person', 'Operation Head', 'Reservation', 'Operation', 'Accountant', 'Data Operator', 'Reservation Head'],
       dropdown: [
         { name: 'Profile', path: '/profile' },
-        { name: 'Organization', path: '/organization' },
+        { name: 'Organization', path: '/organization/destinations' },
       ],
     },
     {

@@ -104,9 +104,12 @@ const SuppliersListPage = () => {
                         <h1 className="text-3xl font-bold text-slate-800">Suppliers</h1>
                         <p className="text-slate-500 mt-1">Manage your transporter companies and single drivers.</p>
                     </div>
-                    <button onClick={() => navigate('/suppliers/new')} className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm">
+                    <button onClick={() => navigate('/suppliers/new')}             className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-70 transition flex items-center"
+>
                         <FiPlus className="mr-2"/> New Supplier
                     </button>
+
+                    
                 </header>
 
                 <div className="mb-6">

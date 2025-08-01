@@ -46,9 +46,9 @@ import TransportServices from "../component/pages/transport/TransportServices";
 import AddTransportService from "../component/pages/transport/AddTransportService";
 import CsvUploader from "../component/pages/Hotels/HotelPrice";
 import EditTransportService from "../component/pages/transport/EditTransportService";
-import HotelQuotation from "../component/pages/trips/new-quote/HotelQuotation";
 import SuppliersListPage from "../component/pages/suppliers/SuppliersListPage";
 import SupplierForm from "../component/pages/suppliers/SupplierForm";
+import CreateQuotePage from "../component/pages/trips/new-quote/CreateQuotePage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -204,7 +204,7 @@ const AppRoutes = () => {
             ]}
           >
             <Layout>
-              <HotelQuotation/>
+              <CreateQuotePage/>
             </Layout>
           </ProtectedRoute>
         }

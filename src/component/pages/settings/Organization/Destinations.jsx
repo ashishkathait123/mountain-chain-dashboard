@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiMoreVertical, FiEyeOff, FiFilter, FiX, FiEdit, FiPlus } from 'react-icons/fi';
+import { FiMoreVertical, FiEyeOff, FiFilter, FiX, FiEdit, FiPlus, FiEye, FiRefreshCw } from 'react-icons/fi';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import debounce from 'lodash/debounce';
+import { Toaster } from 'react-hot-toast';
 
 const OrganizationDestinations = () => {
   const [destinations, setDestinations] = useState([]);
@@ -46,46 +45,34 @@ const OrganizationDestinations = () => {
     debouncedSetFilters({ ...filters, [field]: value });
   };
 
+  const fetchDestinations = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist');
+      const mappedData = response.data.data.map((dest) => ({
+        id: dest._id,
+        name: dest.name,
+        short: dest.shortName,
+        currency: dest.currency,
+        createdBy: dest.createdBy?.name || 'System',
+        status: 'active',
+        description: '',
+        maxChildAge: '',
+        defaultCheckInTime: '',
+        defaultCheckOutTime: '',
+        aliases: dest.aliases || [],
+      }));
+      setDestinations(mappedData);
+      toast.success('Destinations loaded successfully');
+    } catch (error) {
+      console.error('Error fetching destinations:', error);
+      toast.error(`Failed to load destinations: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDestinations = async (retries = 3, delay = 1000) => {
-      try {
-        const response = await axios.get('https://mountain-chain.onrender.com/mountainchain/api/destination/destinationlist');
-        if (response.data.error && (!response.data.data || response.data.data.length === 0)) {
-          throw new Error(response.data.message || 'API returned an error or empty data');
-        }
-         console.log('fdgfdg', response)
-        const mappedData = response.data.data.map((dest) => ({
-          id: dest._id,
-          name: dest.name,
-          short: dest.shortName,
-          currency: dest.currency,
-          createdBy: dest.createdBy.name,
-          status: 'active',
-          image: '',
-          description: '',
-          maxChildAge: '',
-          defaultCheckInTime: '',
-          defaultCheckOutTime: '',
-          aliases: dest.aliases || [],
-        }));
-        setDestinations(mappedData);
-        toast.success('Destinations loaded successfully');
-      } catch (error) {
-        if (retries > 0 && error.code === 'ERR_NETWORK') {
-          console.warn(`Retrying... (${retries} attempts left)`);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          return fetchDestinations(retries - 1, delay * 2);
-        }
-        console.error('Error fetching destinations:', {
-          message: error.message,
-          code: error.code,
-          response: error.response?.data,
-        });
-        toast.error(`Failed to load destinations: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDestinations();
   }, []);
 
@@ -108,25 +95,11 @@ const OrganizationDestinations = () => {
     e.preventDefault();
     if (!selectedDestination) return;
 
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      toast.error('No authentication token available. Please log in.');
-      return;
-    }
-
     try {
       const response = await axios.post(
         `https://mountain-chain.onrender.com/mountainchain/api/destination/update-destination/${selectedDestination}`,
-        editFormData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        editFormData
       );
-      if (response.data.error) {
-        throw new Error(response.data.message || 'Failed to update destination');
-      }
       setDestinations(
         destinations.map((dest) =>
           dest.id === selectedDestination ? { ...dest, ...editFormData } : dest
@@ -163,25 +136,12 @@ const OrganizationDestinations = () => {
   const handleDisable = async (id, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     const action = newStatus === 'active' ? 'enabled' : 'disabled';
+    
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('No authentication token available. Please log in.');
-        return;
-      }
-      const response = await axios.post(
+      await axios.post(
         `https://mountain-chain.onrender.com/mountainchain/api/destination/update-destination/${id}`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { status: newStatus }
       );
-      console.log('fdgfdg', response)
-      if (response.data.error) {
-        throw new Error(response.data.message || `Failed to ${action} destination`);
-      }
       setDestinations(
         destinations.map((dest) => (dest.id === id ? { ...dest, status: newStatus } : dest))
       );
@@ -202,8 +162,10 @@ const OrganizationDestinations = () => {
       name: '',
       short: '',
       currency: '',
+      createdBy: '',
+      status: '',
     });
-    toast.info('Filters reset');
+    toast.success('Filters reset');
   };
 
   useEffect(() => {
@@ -213,331 +175,389 @@ const OrganizationDestinations = () => {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Destinations</h1>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center bg-white hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-md border border-gray-300 transition-colors"
-          >
-            <FiFilter className="mr-2" />
-            Filters
-          </button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/organization/add-destination')} // Updated route
-            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-black rounded-md transition-all shadow-md"
-          >
-            <FiPlus className="mr-2" />
-            Add Destination
-          </motion.button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+      <Toaster position="top-right" />
+      <div className="max-w-screen-2xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Destinations</h1>
+            <p className="text-gray-500 mt-1">Manage your organization's destinations</p>
+          </div>
+          <div className="flex items-center gap-3 mt-4 md:mt-0">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition"
+            >
+              <FiFilter className="mr-2" />
+              Filters
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/organization/add-destination')}
+              className="flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2.5 rounded-lg shadow hover:shadow-md transition"
+            >
+              <FiPlus className="mr-2" />
+              Add Destination
+            </motion.button>
+          </div>
         </div>
-      </div>
 
-      {/* Filter Panel */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Filter Destinations</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={filters.name}
-                  onChange={(e) => handleFilterChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Filter by name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Short Code</label>
-                <input
-                  type="text"
-                  value={filters.short}
-                  onChange={(e) => handleFilterChange('short', e.target.value)}
-                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Filter by short code"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                <input
-                  type="text"
-                  value={filters.currency}
-                  onChange={(e) => handleFilterChange('currency', e.target.value)}
-                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Filter by currency"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
-                <input
-                  type="text"
-                  value={filters.createdBy}
-                  onChange={(e) => handleFilterChange('createdBy', e.target.value)}
-                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Filter by creator"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+        {/* Filter Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-white rounded-xl shadow-md p-5 mb-6 border border-gray-200"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Filter Destinations</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-500 hover:text-gray-700 transition"
                 >
-                  <option value="">All Statuses</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  <FiX size={20} />
+                </button>
               </div>
-            </div>
-            <div className="flex justify-end mt-4 space-x-2">
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2 border  border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Reset Filters
-              </button>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <p className="text-sm text-gray-600">
-            Showing {filteredDestinations.length} of {destinations.length} destinations
-          </p>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th> */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Short</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredDestinations.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                    No destinations found matching your filters
-                  </td>
-                </tr>
-              ) : (
-                filteredDestinations.map((destination) => (
-                  <motion.tr
-                    key={destination.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={destination.status === 'inactive' ? 'bg-gray-50' : ''}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Filter by name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Short Code</label>
+                  <input
+                    type="text"
+                    value={filters.short}
+                    onChange={(e) => handleFilterChange('short', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Filter by short code"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                  <input
+                    type="text"
+                    value={filters.currency}
+                    onChange={(e) => handleFilterChange('currency', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Filter by currency"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
+                  <input
+                    type="text"
+                    value={filters.createdBy}
+                    onChange={(e) => handleFilterChange('createdBy', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Filter by creator"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    {/* <td className="px-6 py-4 whitespace-nowrap">
-                      {destination.image ? (
-                        <img
-                          src={destination.image}
-                          alt={destination.name}
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-xs">No image</span>
-                        </div>
-                      )}
-                    </td> */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {destination.name}
-                        {destination.status === 'inactive' && (
-                          <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Disabled
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{destination.short}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{destination.currency}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{destination.createdBy}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                      <button
-                        onClick={(e) => toggleMenu(destination.id, e)}
-                        className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
-                      >
-                        <FiMoreVertical className="h-5 w-5" />
-                      </button>
-                      <AnimatePresence>
-                        {showMenu === destination.id && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                          >
-                            <div className="py-1">
-                              <button
-                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                                onClick={() => {
-                                  handleDisable(destination.id, destination.status);
-                                  setShowMenu(null);
-                                }}
-                              >
-                                <FiEyeOff className="mr-2" />
-                                {destination.status === 'active' ? 'Disable' : 'Enable'}
-                              </button>
-                              <button
-                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                                onClick={() => {
-                                  handleEditDestination(destination.id);
-                                  setShowMenu(null);
-                                }}
-                              >
-                                <FiEdit className="mr-2" />
-                                Edit
-                              </button>
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end mt-4 gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={resetFilters}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Reset Filters
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowFilters(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Apply Filters
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600">
+                Showing {filteredDestinations.length} of {destinations.length} destinations
+              </span>
+              <button 
+                onClick={fetchDestinations}
+                className="ml-3 text-gray-500 hover:text-blue-600 transition"
+                title="Refresh"
+              >
+                <FiRefreshCw size={16} />
+              </button>
+            </div>
+          </div>
+
+          {loading && destinations.length === 0 ? (
+            <div className="p-8">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-14 mb-2 bg-gray-100 rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+          ) : filteredDestinations.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <FiEye className="text-gray-400 text-xl" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">No destinations found</h3>
+              <p className="text-gray-500 mb-4">
+                {Object.values(filters).some(Boolean) 
+                  ? "Try adjusting your filters" 
+                  : "No destinations available yet"}
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  if (Object.values(filters).some(Boolean)) {
+                    resetFilters();
+                  } else {
+                    navigate('/organization/add-destination');
+                  }
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow hover:shadow-md transition"
+              >
+                {Object.values(filters).some(Boolean) ? "Reset Filters" : "Add First Destination"}
+              </motion.button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Short Code</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredDestinations.map((destination) => (
+                    <motion.tr
+                      key={destination.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`hover:bg-gray-50 transition ${destination.status === 'inactive' ? 'bg-gray-50' : ''}`}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                            {destination.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {destination.name}
+                              {destination.status === 'inactive' && (
+                                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Inactive
+                                </span>
+                              )}
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                            <div className="text-sm text-gray-500">
+                              {destination.aliases.slice(0, 2).join(', ')}
+                              {destination.aliases.length > 2 && '...'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {destination.short}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {destination.currency}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {destination.createdBy}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button
+                          onClick={(e) => toggleMenu(destination.id, e)}
+                          className="text-gray-400 hover:text-gray-600 transition"
+                        >
+                          <FiMoreVertical className="h-5 w-5" />
+                        </button>
+                        <AnimatePresence>
+                          {showMenu === destination.id && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                            >
+                              <div className="py-1">
+                                <motion.button
+                                  whileHover={{ x: 2 }}
+                                  onClick={() => {
+                                    handleDisable(destination.id, destination.status);
+                                    setShowMenu(null);
+                                  }}
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition"
+                                >
+                                  {destination.status === 'active' ? (
+                                    <>
+                                      <FiEyeOff className="mr-2 text-gray-500" />
+                                      Disable
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FiEye className="mr-2 text-green-500" />
+                                      Enable
+                                    </>
+                                  )}
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ x: 2 }}
+                                  onClick={() => {
+                                    handleEditDestination(destination.id);
+                                    setShowMenu(null);
+                                  }}
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition"
+                                >
+                                  <FiEdit className="mr-2 text-blue-500" />
+                                  Edit
+                                </motion.button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Edit Form Popup */}
+      {/* Edit Form Modal */}
       <AnimatePresence>
         {showEditForm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
             onClick={() => setShowEditForm(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}c
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold mb-4">Edit Destination</h2>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Column 1 */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={editFormData.name}
-                        onChange={handleEditChange}
-                        className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Short Code</label>
-                      <input
-                        type="text"
-                        name="short"
-                        value={editFormData.short}
-                        onChange={handleEditChange}
-                        className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
+              <div className="p-5 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50">
+                <h3 className="text-xl font-semibold text-gray-800">Edit Destination</h3>
+                <button
+                  onClick={() => setShowEditForm(false)}
+                  className="text-gray-500 hover:text-gray-700 transition"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleEditSubmit} className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={editFormData.name}
+                      onChange={handleEditChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
                   </div>
-
-                  {/* Column 2 */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                      <input
-                        type="text"
-                        name="currency"
-                        value={editFormData.currency}
-                        onChange={handleEditChange}
-                        className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Short Code</label>
+                    <input
+                      type="text"
+                      name="short"
+                      value={editFormData.short}
+                      onChange={handleEditChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                    <input
+                      type="text"
+                      name="currency"
+                      value={editFormData.currency}
+                      onChange={handleEditChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Aliases (Regions)</label>
+                    <textarea
+                      name="aliases"
+                      value={editFormData.aliases.join(', ')}
+                      onChange={(e) =>
+                        setEditFormData((prev) => ({
+                          ...prev,
+                          aliases: e.target.value.split(',').map((item) => item.trim()),
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows="2"
+                      placeholder="e.g., Jaipur, Jodhpur, Udaipur"
+                    />
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Aliases (Regions)</label>
-                  <textarea
-                    name="aliases"
-                    value={editFormData.aliases.join(', ')}
-                    onChange={(e) =>
-                      setEditFormData((prev) => ({
-                        ...prev,
-                        aliases: e.target.value.split(',').map((item) => item.trim()),
-                      }))
-                    }
-                    className="w-full px-3 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    rows="2"
-                    placeholder="e.g., Jaipur, Jodhpur, Udaipur"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2 mt-4">
-                  <button
+                <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-gray-200">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     type="button"
                     onClick={() => setShowEditForm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition"
                   >
-                    Save
-                  </button>
+                    Save Changes
+                  </motion.button>
                 </div>
               </form>
             </motion.div>
