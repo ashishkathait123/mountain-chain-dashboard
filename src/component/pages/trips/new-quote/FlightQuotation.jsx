@@ -46,12 +46,15 @@ const FlightQuotation = ({ queryData, flights, onUpdate, onAdd, onRemove }) => {
         fetchDestinations();
     }, []);
 
+    // --- THIS IS THE CORRECTED LOGIC ---
+    // The `value` for each option is now the destination's `_id`.
     const destinationOptions = useMemo(() => 
-        allDestinations.map(dest => ({ value: dest.name, label: `${dest.name}, ${dest.country}` })),
-        [allDestinations]
-    );
+        allDestinations.map(dest => ({
+            value: dest._id, // USE THE ID FOR THE VALUE
+            label: `${dest.name}, ${dest.country}` // Keep the label user-friendly
+        }))
+    , [allDestinations]);
 
-    // --- RE-INTRODUCED: Calculate total for this section from props ---
     const flightsTotal = useMemo(() => {
         return flights.reduce((total, flight) => total + (Number(flight.givenPrice) || 0), 0);
     }, [flights]);
@@ -70,6 +73,7 @@ const FlightQuotation = ({ queryData, flights, onUpdate, onAdd, onRemove }) => {
                             <div className="grid grid-cols-1 lg:grid-cols-5 gap-x-6 gap-y-4">
                                 <div className="lg:col-span-3 space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* This now works correctly as `flight.from` will be an ID */}
                                         <div><label className="block text-xs font-semibold text-slate-600 mb-1">From</label><Select options={destinationOptions} isLoading={isDestinationsLoading} value={destinationOptions.find(opt => opt.value === flight.from)} onChange={opt => onUpdate(flight.id, 'from', opt.value)} styles={selectStyles} placeholder="Select origin..." /></div>
                                         <div><label className="block text-xs font-semibold text-slate-600 mb-1">Destination</label><Select options={destinationOptions} isLoading={isDestinationsLoading} value={destinationOptions.find(opt => opt.value === flight.to)} onChange={opt => onUpdate(flight.id, 'to', opt.value)} styles={selectStyles} placeholder="Select destination..."/></div>
                                     </div>
@@ -99,7 +103,6 @@ const FlightQuotation = ({ queryData, flights, onUpdate, onAdd, onRemove }) => {
                         </div>
                     ))}
                 </div>
-                {/* --- RE-INTRODUCED: Total Badge for this section --- */}
                 <div className="mt-6 flex justify-between items-center">
                     <button onClick={onAdd} className="flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800">
                         <FiPlus className="mr-1"/> Add More Flight

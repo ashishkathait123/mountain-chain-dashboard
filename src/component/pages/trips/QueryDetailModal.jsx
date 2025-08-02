@@ -1,666 +1,474 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { FiX, FiEdit2, FiClock, FiPlus, FiCheck, FiCalendar, FiArrowLeft } from 'react-icons/fi';
+import { FiPlus, FiCalendar, FiUser, FiEdit, FiSearch, FiMoreVertical, FiX, FiCheck } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { FiMoreVertical } from 'react-icons/fi';
+import { useNavigate, useParams } from 'react-router-dom';
+import QuotationDetails from './QuoteBasicDetailsPage';
+import AllQuotesTab from './AllQuotesTab';
+import NewQuoteTab from './NewQuoteTab';
 
-const QueryDetailPage = ({ token }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedQuery, setEditedQuery] = useState(null);
-  const [newComment, setNewComment] = useState('');
-  const [isActionable, setIsActionable] = useState(false);
-  const [dueDate, setDueDate] = useState('');
-  const [activeTab, setActiveTab] = useState('details');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [followUps, setFollowUps] = useState([]);
-
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { id } = useParams();
-
-  // UPDATED: This function now passes the entire query object to the new route
-  const handleNavigate = () => {
-    if (editedQuery) {
-      navigate("/new-quote", { state: { query: editedQuery } });
-    } else {
-      toast.error("Query data is not available to create a quotation.");
-    }
-  };
-
-  useEffect(() => {
-    if (location.state?.query) {
-      setEditedQuery(location.state.query);
-      setLoading(false);
-    } else {
-      fetchQuery();
-    }
-  }, [id, location.state]);
-
-  const fetchQuery = async () => {
-    try {
-    const token = sessionStorage.getItem('token');
-    const response = await axios.get(
-      `https://mountain-chain.onrender.com/mountainchain/api/destination/getallquerys/${id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-      setEditedQuery(response.data);
-      setLoading(false);
-    } catch (error) {
-      toast.error('Failed to load query');
-      console.error('Error fetching query:', error);
-      navigate(-1);
-    }
-  };
-
-useEffect(() => {
-  const fetchFollowUps = async () => {
-    const token = sessionStorage.getItem('token');
-    if (!token || !editedQuery?._id) return;
-    try {
-      const response = await axios.get(
-        `https://mountain-chain.onrender.com/mountainchain/api/destination/getfollowupsquery?queryId=${editedQuery._id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      setFollowUps(response.data); 
-    } catch (error) {
-      console.error("Error fetching follow-ups:", error);
-      toast.error("Failed to load follow-up history.");
-    }
-  };
-  fetchFollowUps();
-}, [editedQuery?._id]);
-
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditedQuery(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleArrayChange = (e, index, field) => {
-    const newArray = [...editedQuery[field]];
-    newArray[index] = e.target.value;
-    setEditedQuery(prev => ({ ...prev, [field]: newArray }));
-  };
-
-  const addPhoneNumber = () => {
-    setEditedQuery(prev => ({
-      ...prev,
-      phoneNumbers: [...(prev.phoneNumbers || []), '']
-    }));
-  };
-
-  const removePhoneNumber = (index) => {
-    const newNumbers = [...editedQuery.phoneNumbers];
-    newNumbers.splice(index, 1);
-    setEditedQuery(prev => ({ ...prev, phoneNumbers: newNumbers }));
-  };
-  const handleMarkAsResolved = async (followUpId) => {
-  const token = sessionStorage.getItem('token');
-  if (!token) {
-    toast.error("User not authenticated. Please login again.");
-    return;
-  }
-  try {
-    const response = await axios.put(
-      `http://localhost:5500/mountainchain/api/destination/addfollowups/${followUpId}`,
-      {
-        status: "Solved"
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-    setFollowUps(prev => prev.map(followUp => 
-      followUp._id === followUpId ? { ...followUp, status: "Solved" } : followUp
-    ));
-    toast.success('Follow-up marked as resolved!');
-  } catch (error) {
-    console.error('Error marking follow-up as resolved:', error);
-    toast.error(error.response?.data?.message || 'Failed to update follow-up status');
-  }
+// --- HELPER FUNCTIONS ---
+const timeAgo = (date) => {
+    if (!date) return '';
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " minutes ago";
+    return "a few seconds ago";
 };
 
-
-  
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      setIsEditing(false);
-      toast.success('Query updated successfully!');
-    } catch (error) {
-      toast.error('Failed to update query');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) {
-      toast.error('Please enter a comment');
-      return;
-    }
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      toast.error("User not authenticated. Please login again.");
-      return;
-    }
-    try {
-      setSaving(true);
-      const response = await axios.post(
-        `https://mountain-chain.onrender.com/mountainchain/api/destination/addfollowups/${editedQuery._id}`,
-        {
-          message: newComment,
-          dueDate: isActionable ? dueDate : undefined,
-          status: isActionable ? "Not Solved" : undefined
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      setNewComment('');
-      setIsActionable(false);
-      setDueDate('');
-      toast.success('Follow-up added successfully!');
-    } catch (error) {
-      console.error('Error adding follow-up:', error.response?.data || error.message);
-      toast.error(error.response?.data?.message || 'Failed to add follow-up');
-    } finally {
-      setSaving(false);
-    }
+const dueText = (date) => {
+    if (!date) return '';
+    const diff = new Date(date) - new Date();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    if (days < -1) return `Due ${Math.abs(days)} days ago`;
+    if (days === -1) return `Due yesterday`;
+    if (days === 0) return `Due today`;
+    if (days === 1) return `Due tomorrow`;
+    return `Due in ${days} days`;
 };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+};
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
+const API_BASE_URL = "http://localhost:5500/mountainchain/api";
 
-  const handleBack = () => {
-    navigate(-1);
-  };
+const QueryDetailPage = () => {
+    const [editedQuery, setEditedQuery] = useState(null);
+    const [quotations, setQuotations] = useState([]);
+    const [followUps, setFollowUps] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('Basic Details');
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
-  if (!editedQuery) return <div className="p-4 text-center"><p className="text-red-500">Query not found</p><button onClick={handleBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Go Back</button></div>;
+    // State for Follow-up Modal & Menu
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newComment, setNewComment] = useState('');
+    const [isActionable, setIsActionable] = useState(false);
+    const [dueDate, setDueDate] = useState('');
+    const [isSavingFollowUp, setIsSavingFollowUp] = useState(false);
+    const [openFollowUpMenu, setOpenFollowUpMenu] = useState(null);
 
-  return (
-    // ... JSX remains the same, no changes needed here
-    <div className="bg-white rounded-lg shadow-sm w-full max-w-6xl mx-auto my-4 overflow-y-auto text-black">
-      {/* Header */}
-      <div className="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-        <div className="flex items-center">
-          <button 
-            onClick={handleBack}
-            className="p-2 text-gray-500 hover:bg-gray-100 rounded-full mr-2"
-            title="Go back"
-          >
-            <FiArrowLeft size={20} />
-          </button>
-          <div>
-            <h2 className="text-xl font-semibold">
-              #{editedQuery.queryId} • {editedQuery.guestName} • {editedQuery.destination?.name}
-              {editedQuery.querySource?.type && ` • ${editedQuery.querySource.type}`}
-              {editedQuery.referenceId && ` • Ref: ${editedQuery.referenceId}`}
-              {editedQuery.status && ` • ${editedQuery.status}`}
-            </h2>
-            <div className="flex items-center text-sm text-gray-500 mt-1">
-              <FiCalendar className="mr-1" />
-              {formatDate(editedQuery.startDate)} • {editedQuery.duration} • {editedQuery.noOfAdults} Adult{editedQuery.noOfAdults !== 1 ? 's' : ''}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          {!isEditing && (
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
-              title="Edit"
-            >
-              <FiEdit2 size={18} />
-            </button>
-          )}
-        </div>
-      </div>
+    const navigate = useNavigate();
+    const { id } = useParams();
+    const followUpMenuRef = useRef(null);
 
-      {/* Tabs */}
-      <div className="border-b">
-        <div className="flex space-x-4 px-4">
-          <button
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'details' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setActiveTab('details')}
-          >
-            Details
-          </button>
-          <button
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'followups' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setActiveTab('followups')}
-          >
-            Follow-ups
-          </button>
-          <button
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'quotes' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setActiveTab('quotes')}
-          >
-            Quotes
-          </button>
-        </div>
-      </div>
+    const latestQuote = useMemo(() => {
+        if (!quotations || quotations.length === 0) return null;
+        return quotations[0];
+    }, [quotations]);
 
-      {/* Content */}
-      <div className="p-4">
-        {activeTab === 'details' && (
-          <div className="space-y-6">
-            {/* Guest Details Section */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-medium">Guest Details</h3>
-                {isEditing && (
-                  <button 
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : (
-                      <>
-                        <FiCheck className="mr-1" /> Save
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (followUpMenuRef.current && !followUpMenuRef.current.contains(event.target)) {
+                setOpenFollowUpMenu(null);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [followUpMenuRef]);
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Name & Email */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="guestName"
-                      value={editedQuery.guestName || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded"
-                    />
-                  ) : (
-                    <p>{editedQuery.guestName || 'N/A'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={editedQuery.email || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded"
-                    />
-                  ) : (
-                    <p>{editedQuery.email || 'N/A'}</p>
-                  )}
-                </div>
+    const handleNavigateToCreate = () => {
+        if (editedQuery) navigate("/new-quote", { state: { query: editedQuery } });
+        else toast.error("Query data not available.");
+    };
 
-                {/* Phone Numbers */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number(s)</label>
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      {editedQuery.phoneNumbers?.map((num, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <input
-                            type="tel"
-                            value={num}
-                            onChange={(e) => handleArrayChange(e, index, 'phoneNumbers')}
-                            className="flex-1 p-2 border border-gray-300 rounded"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removePhoneNumber(index)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={addPhoneNumber}
-                        className="mt-2 flex items-center text-blue-600 text-sm"
-                      >
-                        <FiPlus className="mr-1" /> Add Phone Number
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {editedQuery.phoneNumbers?.map((num, index) => (
-                        <p key={index}>{num}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
+    const handleUseQuote = (quoteId) => navigate(`/quotes/${quoteId}`);
 
-                {/* Address */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  {isEditing ? (
-                    <textarea
-                      name="address"
-                      value={editedQuery.address || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded"
-                      rows="3"
-                    />
-                  ) : (
-                    <p>{editedQuery.address || 'N/A'}</p>
-                  )}
-                </div>
-              </div>
-            </div>
+    const fetchFollowUps = async (queryId, token) => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/destination/getfollowupsquery/${queryId}`, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            });
+            setFollowUps(res.data.data || []);
+        } catch (error) { 
+            toast.error("Could not refresh follow-ups."); 
+        }
+    };
 
-            {/* Trip Details Section */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium mb-3">Trip Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                  <p>{editedQuery.destination?.name || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                  <p>{editedQuery.duration || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      name="startDate"
-                      value={editedQuery.startDate ? editedQuery.startDate.split('T')[0] : ''}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded"
-                    />
-                  ) : (
-                    <p>{formatDate(editedQuery.startDate)}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Number of Nights</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      name="numberOfNights"
-                      value={editedQuery.numberOfNights || 1}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full p-2 border border-gray-300 rounded"
-                    />
-                  ) : (
-                    <p>{editedQuery.numberOfNights || 'N/A'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Adults</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      name="noOfAdults"
-                      value={editedQuery.noOfAdults || 1}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full p-2 border border-gray-300 rounded"
-                    />
-                  ) : (
-                    <p>{editedQuery.noOfAdults || 'N/A'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Children Ages</label>
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      {editedQuery.childrenAges?.map((age, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={age}
-                            onChange={(e) => handleArrayChange(e, index, 'childrenAges')}
-                            className="w-full p-2 border border-gray-300 rounded"
-                            min="0"
-                            placeholder="Age"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newAges = [...editedQuery.childrenAges];
-                              newAges.splice(index, 1);
-                              setEditedQuery(prev => ({ ...prev, childrenAges: newAges }));
-                            }}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditedQuery(prev => ({
-                            ...prev,
-                            childrenAges: [...(prev.childrenAges || []), '']
-                          }));
-                        }}
-                        className="mt-2 flex items-center text-blue-600 text-sm"
-                      >
-                        <FiPlus className="mr-1" /> Add Child Age
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {editedQuery.childrenAges?.length > 0 ? (
-                        editedQuery.childrenAges.map((age, index) => (
-                          <p key={index}>{age} years</p>
-                        ))
-                      ) : (
-                        <p>No children</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Comments Section */}
-            {editedQuery.comments && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Comments</h3>
-                {isEditing ? (
-                  <textarea
-                    name="comments"
-                    value={editedQuery.comments || ''}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded"
-                    rows="3"
-                  />
-                ) : (
-                  <p className="whitespace-pre-wrap">{editedQuery.comments}</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'followups' && (
-          <div className="space-y-6">
-            {/* Existing Follow-ups */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Follow-up History</h3>
-              {editedQuery.followUps?.length > 0 ? (
-                editedQuery.followUps.map((followUp, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="whitespace-pre-wrap">{followUp.message}</p>
-                        <div className="flex items-center text-sm text-gray-500 mt-2">
-                          <FiClock className="mr-1" />
-                          {formatDateTime(followUp.createdAt)} by {followUp.createdBy?.name || 'System'}
-                        </div>
-                        {followUp.actionable && (
-                          <div className="mt-2 text-sm">
-                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                              Actionable
-                            </span>
-                            {followUp.dueDate && (
-                              <span className="ml-2">
-                                Due: {formatDate(followUp.dueDate)}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No follow-ups yet</p>
-              )}
-            </div>
-
-            {/* Add New Follow-up */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium mb-3">Add Follow-up Comment</h3>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded mb-3"
-                rows="3"
-                placeholder="Enter your follow-up comment here..."
-              />
-              <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={isActionable}
-                    onChange={() => setIsActionable(!isActionable)}
-                    className="h-4 w-4 text-blue-600 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">
-                    Mark as actionable
-                  </span>
-                </label>
-                {isActionable && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                )}
-                <div className="flex justify-end space-x-2 pt-2">
-                  <button
-                    onClick={() => {
-                      setNewComment('');
-                      setIsActionable(false);
-                      setDueDate('');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddComment}
-                    disabled={saving || !newComment.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'quotes' && (
-          <div className="space-y-4">
-            <h3 className="font-medium">Suggested Quotes</h3>
-            <p className="text-gray-500">To Create Quote you can start with below suggestions.</p>
+    useEffect(() => {
+        const fetchAllData = async () => {
+            setLoading(true);
+            const token = sessionStorage.getItem('token');
+            if (!token) { 
+                toast.error("Authentication required."); 
+                setLoading(false); 
+                navigate('/login'); 
+                return; 
+            }
             
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search by trip id or guest name"
-                className="w-full p-2 border border-gray-300 rounded"
-              />
+            try {
+                const queryRes = await axios.get(`${API_BASE_URL}/destination/getquery/${id}`, { 
+                    headers: { Authorization: `Bearer ${token}` } 
+                });
+                const queryData = queryRes.data;
+                setEditedQuery(queryData);
+
+                const [quotesRes, followUpsRes] = await Promise.all([
+                    axios.get(`${API_BASE_URL}/quotations/by-query/${queryData._id}`, { 
+                        headers: { Authorization: `Bearer ${token}` } 
+                    }),
+                    axios.get(`${API_BASE_URL}/destination/getfollowupsquery/${queryData._id}`, { 
+                        headers: { Authorization: `Bearer ${token}` } 
+                    })
+                ]);
+                
+                setQuotations(quotesRes.data || []);
+                setFollowUps(followUpsRes.data.data || []);
+            } catch (error) { 
+                toast.error('Failed to load trip details.'); 
+                navigate(-1); 
+            } finally { 
+                setLoading(false); 
+            }
+        };
+        fetchAllData();
+    }, [id, navigate]);
+
+    const handleAddFollowUp = async () => {
+        if (!newComment.trim()) return toast.error("Comment cannot be empty.");
+        setIsSavingFollowUp(true);
+        const token = sessionStorage.getItem('token');
+        
+        try {
+            await axios.post(
+                `${API_BASE_URL}/destination/addfollowups/${editedQuery._id}`, 
+                { 
+                    message: newComment, 
+                    dueDate: isActionable ? dueDate : null, 
+                    status: isActionable ? "Not Solved" : "Solved" 
+                }, 
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            toast.success("Follow-up added!");
+            setNewComment(''); 
+            setIsActionable(false); 
+            setDueDate(''); 
+            setIsModalOpen(false);
+            await fetchFollowUps(editedQuery._id, token);
+        } catch (error) { 
+            toast.error(error.response?.data?.message || "Failed to add follow-up."); 
+        } finally { 
+            setIsSavingFollowUp(false); 
+        }
+    };
+
+    const handleMarkAsResolved = async (followUpIndex) => {
+        const token = sessionStorage.getItem('token');
+        const followUp = followUps[followUpIndex];
+        if (!followUp || followUp.status === 'Solved') return;
+        
+        toast.loading("Updating status...");
+        try {
+            await axios.post(
+                `${API_BASE_URL}/destination/query/${editedQuery._id}/followup/${followUpIndex}/status`, 
+                { status: "Solved" }, 
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            toast.dismiss(); 
+            toast.success("Marked as Resolved!");
+            setOpenFollowUpMenu(null);
+            await fetchFollowUps(editedQuery._id, token);
+        } catch (error) { 
+            toast.dismiss(); 
+            toast.error(error.response?.data?.message || "Failed to update status."); 
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('en-GB', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric' 
+        });
+    };
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-screen font-semibold text-slate-500">
+            Loading Trip Details...
+        </div>
+    );
+    
+    if (!editedQuery) return (
+        <div className="p-4 text-center text-red-500">
+            Query not found.
+        </div>
+    );
+
+    return (
+        <>
+            {/* --- ADD FOLLOW-UP MODAL --- */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <h2 className="text-xl font-bold text-slate-800">Add Follow-up Comment</h2>
+                            <button 
+                                onClick={() => setIsModalOpen(false)} 
+                                className="p-2 hover:bg-slate-100 rounded-full"
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                    Comment
+                                </label>
+                                <textarea
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    rows="4"
+                                    placeholder="Body of the comment here..."
+                                    className="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div className="flex items-start">
+                                <input
+                                    id="actionable"
+                                    type="checkbox"
+                                    checked={isActionable}
+                                    onChange={(e) => setIsActionable(e.target.checked)}
+                                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mt-1"
+                                />
+                                <label htmlFor="actionable" className="ml-3">
+                                    <span className="font-semibold text-sm text-slate-800">
+                                        Mark it as actionable comment
+                                    </span>
+                                    <p className="text-xs text-slate-500">
+                                        This will make it show up in the demanding comments section
+                                    </p>
+                                </label>
+                            </div>
+                            {isActionable && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                        Due Date <span className="text-xs font-normal text-slate-500">
+                                            (if it needs to be resolved before a date)
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={dueDate}
+                                        onChange={(e) => setDueDate(e.target.value)}
+                                        className="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex justify-end items-center p-4 bg-slate-50 border-t rounded-b-lg space-x-3">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="bg-white border border-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddFollowUp}
+                                disabled={isSavingFollowUp}
+                                className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            >
+                                {isSavingFollowUp ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* --- MAIN PAGE LAYOUT --- */}
+            <div className="p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen text-slate-800">
+                <div className="max-w-screen-2xl mx-auto">
+                    {/* Header Section */}
+                    <header className="mb-0 bg-white p-4 rounded-t-lg shadow-sm border">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-800 flex items-center flex-wrap gap-x-4">
+                                    <span># {editedQuery.queryId} • {editedQuery.guestName} • {editedQuery.destination?.name}</span>
+                                    <span className="text-sm font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                        {editedQuery.querySource?.type || 'Direct Query'}
+                                    </span>
+                                    <span className="text-sm font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                        Ref: {editedQuery.referenceId || 'N/A'}
+                                    </span>
+                                </h1>
+                                <div className="flex items-center text-sm text-slate-500 mt-2 space-x-4">
+                                    <span className="flex items-center">
+                                        <FiCalendar className="mr-1.5" /> 
+                                        {formatDate(editedQuery.startDate)} • {editedQuery.duration}
+                                    </span>
+                                    <span className="flex items-center">
+                                        <FiUser className="mr-1.5" /> 
+                                        {editedQuery.noOfAdults} Adult(s)
+                                    </span>
+                                </div>
+                                <div className="flex items-center text-sm text-slate-500 mt-2">
+                                    <FiUser className="mr-1.5" /> 
+                                    {editedQuery.guestName} {editedQuery.phoneNumbers?.[0]} 
+                                    <button className="ml-2 text-slate-400 hover:text-blue-600">
+                                        <FiEdit size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <div className="text-xs font-semibold text-white bg-blue-500 px-2 py-1 rounded">
+                                    {editedQuery.status}
+                                </div>
+                                <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full">
+                                    <FiMoreVertical />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="border-t mt-4 pt-3 flex justify-between items-center text-sm">
+                            <div>
+                                <span className="font-semibold text-slate-500 mr-2">Tags:</span> 
+                                <span className="text-slate-400">No Tags</span>
+                                <button className="ml-2 text-slate-400 hover:text-blue-600">
+                                    <FiEdit size={12} />
+                                </button>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-slate-500 mr-2">Sales Team:</span> 
+                                {editedQuery.salesTeam?.name || 'N/A'}
+                            </div>
+                        </div>
+                    </header>
+                    
+                    {/* Tab Navigation */}
+                    <div className="flex border-b border-slate-200 bg-white px-4">
+                        {['Basic Details', 'All Quotes', 'New Quote', 'Activities'].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`-mb-px px-4 py-3 text-sm font-semibold ${
+                                    activeTab === tab 
+                                        ? 'border-b-2 border-blue-600 text-blue-600' 
+                                        : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                                }`}
+                            >
+                                {tab}
+                                {tab === 'All Quotes' && quotations.length > 0 && (
+                                    <span className="ml-2 bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                                        {quotations.length}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Main Content */}
+                    <main className="grid grid-cols-12 gap-6">
+                        {/* Left Column (Main Content) */}
+                        <div className="col-span-12 lg:col-span-9">
+                            <div className="bg-white rounded-b-lg shadow-sm border border-t-0 min-h-[600px]">
+                                {activeTab === 'Basic Details' && (
+                                    <QuotationDetails quote={latestQuote} />
+                                )}
+                                
+                                {activeTab === 'All Quotes' && (
+                                    <AllQuotesTab 
+                                        quotations={quotations} 
+                                        onUseQuote={handleUseQuote} 
+                                    />
+                                )}
+                                
+                                {activeTab === 'New Quote' && (
+                                    <NewQuoteTab 
+                                        onNavigateToCreate={handleNavigateToCreate} 
+                                    />
+                                )}
+                                
+                                {activeTab === 'Activities' && (
+                                    <div className="p-10 text-center text-slate-500">
+                                        Activity tracking and management will be displayed here.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {/* Right Column (Follow-ups) */}
+                        <div className="col-span-12 lg:col-span-3">
+                            <div className="bg-white p-4 rounded-lg shadow-sm border sticky top-6">
+                                <h2 className="text-lg font-semibold text-slate-700 mb-4">
+                                    Follow-ups
+                                </h2>
+                                <div className="space-y-4">
+                                    {followUps.length > 0 ? (
+                                        followUps.map((f, index) => (
+                                            <div key={f._id} className="text-sm border-b border-slate-100 pb-3 last:border-b-0">
+                                                <div className="flex justify-between items-start">
+                                                    <p className="font-semibold text-slate-800 pr-6">
+                                                        {f.message}
+                                                    </p>
+                                                    <div className="relative" ref={openFollowUpMenu === index ? followUpMenuRef : null}>
+                                                        <button 
+                                                            onClick={() => setOpenFollowUpMenu(openFollowUpMenu === index ? null : index)} 
+                                                            className="p-1 text-slate-400 hover:text-slate-700"
+                                                        >
+                                                            <FiMoreVertical size={16} />
+                                                        </button>
+                                                        {openFollowUpMenu === index && f.status !== 'Solved' && (
+                                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-20">
+                                                                <button 
+                                                                    onClick={() => handleMarkAsResolved(index)} 
+                                                                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                                                                >
+                                                                    Mark as Resolved
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                    {timeAgo(f.createdAt)} by {f.createdBy?.name || 'User'}
+                                                    {f.dueDate && (
+                                                        <span className="font-semibold text-red-500">
+                                                            • {dueText(f.dueDate)}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                {f.status === 'Solved' && (
+                                                    <p className="text-xs text-green-600 font-semibold flex items-center mt-1">
+                                                        <FiCheck size={14} className="mr-1" /> 
+                                                        {f.createdBy?.name || 'User'}, {timeAgo(f.updatedAt)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center text-sm text-slate-500 py-6">
+                                            <h3 className="font-semibold text-slate-700">
+                                                All caught up!
+                                            </h3>
+                                            <p className="mt-1">
+                                                Add comments for this trip flow
+                                            </p>
+                                        </div>
+                                    )}
+                                    <button 
+                                        onClick={() => setIsModalOpen(true)} 
+                                        className="w-full flex items-center justify-center text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md py-2"
+                                    >
+                                        <FiPlus size={16} className="mr-1" /> Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
             </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <span className="font-medium">#52810</span>
-                  <span className="ml-2">SSSASD</span>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">Itinerary</button>
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">Hotels</button>
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">Details</button>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-sm mt-3">
-                <div>
-                  <div className="text-gray-500">Duration:</div>
-                  <div>2 Days</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Transfers:</div>
-                  <div>1 Adults</div>
-                </div>
-                <div className="flex items-end">
-                  <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                    Use this Quote
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-      <button
-        onClick={handleNavigate}
-        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"
-      >
-        <FiPlus className="mr-1" />
-        Create Custom Quotation
-      </button>
-    </div>
-          </div>
-        )}
-      </div>
-    </div>
-
-  );
+        </>
+    );
 };
 
 export default QueryDetailPage;

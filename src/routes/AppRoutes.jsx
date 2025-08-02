@@ -49,6 +49,7 @@ import EditTransportService from "../component/pages/transport/EditTransportServ
 import SuppliersListPage from "../component/pages/suppliers/SuppliersListPage";
 import SupplierForm from "../component/pages/suppliers/SupplierForm";
 import CreateQuotePage from "../component/pages/trips/new-quote/CreateQuotePage";
+import QuotationDetails from "../component/pages/trips/QuoteBasicDetailsPage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -210,6 +211,29 @@ const AppRoutes = () => {
         }
       >
       </Route>
+
+<Route
+  path="/quotes/:quoteId"
+  element={
+    <ProtectedRoute
+      roles={[
+        "Admin",
+        "Sales Head",
+        "Sales Person",
+        "Operation Head",
+        "Reservation",
+        "Operation",
+        "Accountant",
+        "Data Operator",
+        "Reservation Head",
+      ]}
+    >
+      <Layout>
+        <QuotationDetails />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
 
 
 
