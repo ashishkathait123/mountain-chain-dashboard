@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { FiPlus, FiX, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import Select from 'react-select';
 
-const API_BASE_URL = "http://localhost:5500/mountainchain/api";
+const API_BASE_URL = "https://mountain-chain.onrender.com/mountainchain/api";
 
 // Helper Component for Collapsible Sections
 const Accordion = ({ title, children }) => {

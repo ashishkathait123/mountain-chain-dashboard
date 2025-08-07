@@ -217,7 +217,7 @@ const AddHotel = () => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "http://localhost:5500/mountainchain/api/hotel/upload-hotels-csv",
+        "https://mountain-chain.onrender.com/mountainchain/api/hotel/upload-hotels-csv",
         formData,
         {
           headers: {

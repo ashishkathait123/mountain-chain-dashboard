@@ -33,7 +33,7 @@ const OrganizationTermsConditions = () => {
 
   const fetchTerms = async () => {
     try {
-      const response = await axios.get('http://localhost:5500/mountainchain/api/terms-and-conditions', getAuthHeaders());
+      const response = await axios.get('https://mountain-chain.onrender.com/mountainchain/api/terms-and-conditions', getAuthHeaders());
       const terms = Array.isArray(response.data)
         ? response.data
         : Array.isArray(response.data.data)
@@ -71,7 +71,7 @@ const OrganizationTermsConditions = () => {
       if (selectedTerm) {
         // Update existing term
         await axios.put(
-          `http://localhost:5500/mountainchain/api/terms-and-conditions/${selectedTerm}`,
+          `https://mountain-chain.onrender.com/mountainchain/api/terms-and-conditions/${selectedTerm}`,
           {
             name,
             termsAndConditionsText: termsText,
@@ -82,7 +82,7 @@ const OrganizationTermsConditions = () => {
       } else {
         // Create new term
         await axios.post(
-          'http://localhost:5500/mountainchain/api/terms-and-conditions',
+          'https://mountain-chain.onrender.com/mountainchain/api/terms-and-conditions',
           {
             name,
             termsAndConditionsText: termsText,
@@ -108,7 +108,7 @@ const OrganizationTermsConditions = () => {
     if (window.confirm('Are you sure you want to delete this term?')) {
       try {
         await axios.delete(
-          `http://localhost:5500/mountainchain/api/terms-and-conditions/${id}`,
+          `https://mountain-chain.onrender.com/mountainchain/api/terms-and-conditions/${id}`,
           getAuthHeaders()
         );
         toast.success('Term deleted successfully');

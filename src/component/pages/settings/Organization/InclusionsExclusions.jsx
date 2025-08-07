@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Trash2, Edit, Plus, X, ChevronRight, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const BASE_URL = "http://localhost:5500/mountainchain/api/enex";
+const BASE_URL = "https://mountain-chain.onrender.com/mountainchain/api/enex";
 
 const OrganizationInclusionsExclusions = () => {
   const [presets, setPresets] = useState([]);

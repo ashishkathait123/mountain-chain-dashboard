@@ -21,7 +21,7 @@ const CsvUploader = () => {
 
   const fetchUploadedData = async () => {
     try {
-      const res = await axios.get("http://localhost:5500/mountainchain/api/upload/data");
+      const res = await axios.get("https://mountain-chain.onrender.com/mountainchain/api/upload/data");
       setCsvData(res.data.data);
     } catch (err) {
       console.error("Error fetching uploaded data:", err);
@@ -55,7 +55,7 @@ const CsvUploader = () => {
     formData.append("file", file);
 
     try {
-      const res = await axios.post("http://localhost:5500/mountainchain/api/upload", formData, {
+      const res = await axios.post("https://mountain-chain.onrender.com/mountainchain/api/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

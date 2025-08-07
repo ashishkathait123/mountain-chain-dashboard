@@ -50,6 +50,8 @@ import SuppliersListPage from "../component/pages/suppliers/SuppliersListPage";
 import SupplierForm from "../component/pages/suppliers/SupplierForm";
 import CreateQuotePage from "../component/pages/trips/new-quote/CreateQuotePage";
 import QuotationDetails from "../component/pages/trips/QuoteBasicDetailsPage";
+import QuoteFormPage from "../component/pages/trips/new-quote/QuoteFormPage";
+import ConversionPage from "../component/pages/ConversionPage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -90,9 +92,7 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-        
-      </Route>
+      ></Route>
       <Route
         path="/addhotel"
         element={
@@ -114,9 +114,7 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-        
-      </Route>
+      ></Route>
       <Route
         path="/hotels/:id"
         element={
@@ -138,9 +136,7 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-        
-      </Route>
+      ></Route>
       <Route
         path="/hotels/edit/:id"
         element={
@@ -162,8 +158,7 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
+      ></Route>
       <Route
         path="/hotel-price"
         element={
@@ -185,8 +180,7 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
+      ></Route>
 
       <Route
         path="/new-quote"
@@ -205,37 +199,79 @@ const AppRoutes = () => {
             ]}
           >
             <Layout>
-              <CreateQuotePage/>
+              <CreateQuotePage />
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
+      ></Route>
 
-<Route
-  path="/quotes/:quoteId"
-  element={
-    <ProtectedRoute
-      roles={[
-        "Admin",
-        "Sales Head",
-        "Sales Person",
-        "Operation Head",
-        "Reservation",
-        "Operation",
-        "Accountant",
-        "Data Operator",
-        "Reservation Head",
-      ]}
-    >
-      <Layout>
-        <QuotationDetails />
-      </Layout>
-    </ProtectedRoute>
-  }
-/>
+      <Route
+        path="/edit-quote/:quoteId"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <QuoteFormPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      ></Route>
+      <Route
+        path="/convert-trip/:quoteId"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <ConversionPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      ></Route>
 
-
+      <Route
+        path="/quotes/:quoteId"
+        element={
+          <ProtectedRoute
+            roles={[
+              "Admin",
+              "Sales Head",
+              "Sales Person",
+              "Operation Head",
+              "Reservation",
+              "Operation",
+              "Accountant",
+              "Data Operator",
+              "Reservation Head",
+            ]}
+          >
+            <Layout>
+              <QuotationDetails />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="transport-Service"
@@ -254,14 +290,13 @@ const AppRoutes = () => {
             ]}
           >
             <Layout>
-              <TransportServices/>
+              <TransportServices />
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
-      
-    <Route
+      ></Route>
+
+      <Route
         path="/addservice"
         element={
           <ProtectedRoute
@@ -282,11 +317,9 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-        
-      </Route>
-      
-<Route
+      ></Route>
+
+      <Route
         path="/service/update/:id"
         element={
           <ProtectedRoute
@@ -307,11 +340,9 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
-  
+      ></Route>
 
-<Route
+      <Route
         path="/suppliers/new"
         element={
           <ProtectedRoute
@@ -332,9 +363,8 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
-<Route
+      ></Route>
+      <Route
         path="/suppliers/edit/:id"
         element={
           <ProtectedRoute
@@ -355,11 +385,9 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
+      ></Route>
 
-
-<Route
+      <Route
         path="supplier-list"
         element={
           <ProtectedRoute
@@ -380,10 +408,7 @@ const AppRoutes = () => {
             </Layout>
           </ProtectedRoute>
         }
-      >
-      </Route>
-
-
+      ></Route>
 
       <Route
         path="/sales-person/dashboard"

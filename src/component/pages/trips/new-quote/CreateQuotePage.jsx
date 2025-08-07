@@ -11,7 +11,7 @@ import TransportQuotation from './TransportQuotation';
 import Summary from './Summary';
 import ItineraryDetails from '../ItineraryDetails';
 // **** FIX #1: Use a consistent variable name for the API URL ****
-const API_BASE_URL = "http://localhost:5500/mountainchain/api";
+const API_BASE_URL = "https://mountain-chain.onrender.com/mountainchain/api";
 
 const CreateQuotePage = () => {
     const location = useLocation();
@@ -118,7 +118,7 @@ const CreateQuotePage = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success('Quotation saved successfully!');
-            navigate(`/trips/query/${query._id}`); // Recommended: Navigate back to the trip details page
+            navigate(`/organization/trips/query/${query._id}`); // Recommended: Navigate back to the trip details page
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to save quotation.');
             console.error("Save Quotation Error:", error.response || error);

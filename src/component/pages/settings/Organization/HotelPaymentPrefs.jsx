@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // 1. CONFIGURE AXIOS FOR AUTHENTICATION
 const api = axios.create({
-  baseURL: "http://localhost:5500/mountainchain/api",
+  baseURL: "https://mountain-chain.onrender.com/mountainchain/api",
 });
 
 // Use an interceptor to automatically add the auth token to every request
